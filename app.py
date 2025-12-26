@@ -58,10 +58,9 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- CSS 修正：確保理論區塊文字為深色 (解決圖1問題) ---
+# --- CSS 設定 ---
 st.markdown("""
 <style>
-    /* Metric Card 樣式 */
     .metric-card {
         background-color: #f5f5f5;
         border: 1px solid #e0e0e0;
@@ -79,8 +78,6 @@ st.markdown("""
     .metric-card p, .metric-card span {
         color: #333333 !important;
     }
-    
-    /* Theory Box 樣式 (關鍵修正) */
     .theory-box {
         background-color: #ffffff;
         padding: 20px;
@@ -89,13 +86,11 @@ st.markdown("""
         margin-bottom: 20px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-    /* 強制標題為深藍色 */
     .theory-box h4 {
         color: #1565c0 !important;
         font-weight: bold;
         margin-bottom: 10px;
     }
-    /* 強制內文為深黑色 */
     .theory-box p, .theory-box li, .theory-box span, .theory-box div {
         color: #212121 !important; 
         font-size: 1.05em;
@@ -139,6 +134,7 @@ st.sidebar.markdown("**目標材料模型 (Target Material):**")
 st.sidebar.info("TE Connectivity LDT0-028K (PVDF)")
 
 with st.sidebar.expander("查看材料物理參數"):
+    # 在 HTML 區塊內使用雙斜線 \\
     st.markdown(r"""
     <div style='font-size: 0.85em; color: #555;'>
     <b>Physical Properties:</b><br>
@@ -159,7 +155,7 @@ st.sidebar.text("Developed for Science Edge 2025")
 # --- 分頁內容 ---
 tab_theory, tab_lab, tab_field = st.tabs(["理論架構與邏輯 (Theory)", "物理實驗室 (Lab Mode)", "場域模擬 (Field Mode)"])
 
-# ================= TAB 1: 理論架構 (重點修正區) =================
+# ================= TAB 1: 理論架構 (重點修正區：使用雙斜線) =================
 with tab_theory:
     st.header("系統運算邏輯與物理模型")
     st.markdown("本數位孿生系統結合流體力學、壓電材料動力學與幾何向量分析，透過數值預測系統表現。")
@@ -167,7 +163,7 @@ with tab_theory:
     col_t1, col_t2 = st.columns(2)
     
     with col_t1:
-        # 使用 r""" ... """ (Raw String) 避免 LaTeX 指令被吃掉
+        # 注意：在 HTML tag 內的 LaTeX，\Lambda 改為 \\Lambda
         st.markdown(r"""
         <div class="theory-box">
         <h4>1. 氣象輸入模型 (Stochastic Input)</h4>
@@ -175,6 +171,7 @@ with tab_theory:
         </div>
         """, unsafe_allow_html=True)
         
+        # st.latex 以外部獨立調用時，單斜線即可
         st.latex(r"N(D) = N_0 e^{-\Lambda D}")
         
         st.markdown(r"""
@@ -207,7 +204,7 @@ with tab_theory:
     col_t3, col_t4 = st.columns([1, 1])
     
     with col_t3:
-        # 這裡原本有問題，加上 r 前綴並修正 LaTeX 語法
+        # 關鍵修正：HTML 內部的 LaTeX 全部改為雙斜線 (\\text, \\theta, \\arctan)
         st.markdown(r"""
         <div class="theory-box">
         <h4>向量合成原理 (Vector Analysis)</h4>
@@ -216,6 +213,7 @@ with tab_theory:
         </div>
         """, unsafe_allow_html=True)
         
+        # st.latex 這裡維持單斜線，因為它不包在 HTML tag 裡
         st.latex(r"\theta_{\text{impact}} = \arctan\left(\frac{V_{\text{wind}}}{V_{\text{term}}}\right)")
         
         st.markdown(r"""
@@ -225,6 +223,7 @@ with tab_theory:
         st.latex(r"E_{\text{fixed}} \propto (F \cdot \cos\theta)^2")
 
     with col_t4:
+        # 關鍵修正：HTML 內部的 LaTeX 全部改為雙斜線 (\\phi)
         st.markdown(r"""
         <div class="theory-box">
         <h4>自動補償邏輯 (Optimization Logic)</h4>
