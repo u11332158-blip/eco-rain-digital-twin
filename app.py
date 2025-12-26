@@ -1,3 +1,62 @@
+# 檔案名稱：app.py
+import streamlit as st
+import matplotlib.pyplot as plt
+import numpy as np
+import physics_core  # <--- 關鍵！這裡把剛剛寫的大腦匯入進來
+
+st.title("Eco-Rain Digital Twin Simulator")
+st.markdown("### 基於 Marshall-Palmer 分佈與 RK4 阻尼模型")
+
+# --- 側邊欄參數 ---
+st.sidebar.header("環境參數 (Simulation Control)")
+rain_rate = st.sidebar.slider("降雨強度 (Rain Rate)", 10, 100, 50, format="%d mm/hr")
+wetness = st.sidebar.slider("水膜係數 (Wetness Factor)", 0.0, 1.0, 0.1)
+
+# --- 按鈕觸發模擬 ---
+if st.button("執行蒙地卡羅模擬 (Run Monte Carlo)"):
+    
+    # 1. 呼叫 physics_core 裡的函式生成雨滴
+    with st.spinner('正在生成 1,000 顆隨機雨滴...'):
+        # 這裡就是使用您剛剛分開寫的邏輯
+        masses, velocities = physics_core.generate_storm_profile(n_drops=1000, rain_rate_mmph=rain_rate)
+    
+    st.success(f"模擬完成！生成 {len(masses)} 顆有效雨滴。")
+
+    # 2. 畫出雨滴速度分佈圖
+    col1, col2 = st.columns(2)
+    with col1:
+        st.subheader("雨滴速度分佈 (Velocity Dist.)")
+        fig, ax = plt.subplots()
+        ax.hist(velocities, bins=25, color='#4A90E2', edgecolor='black', alpha=0.7)
+        ax.set_xlabel("Velocity (m/s)")
+        ax.set_ylabel("Count")
+        ax.set_title(f"Distribution at R={rain_rate}mm/hr")
+        st.pyplot(fig)
+
+    # 3. 畫出單次撞擊波形 (展示 RK4)
+    with col2:
+        st.subheader("單次撞擊波形預覽 (Waveform)")
+        # 隨機抓一顆雨滴來跑 RK4
+        idx = np.random.randint(0, len(masses))
+        t, v = physics_core.rk4_solver(
+            mass_beam=0.005, k_spring=150, dt=0.0001, total_time=0.1,
+            drop_mass=masses[idx], drop_velocity=velocities[idx], wetness=wetness
+        )
+        fig2, ax2 = plt.subplots()
+        ax2.plot(t*1000, v, color='#FF6B6B', linewidth=2)
+        ax2.set_xlabel("Time (ms)")
+        ax2.set_ylabel("Voltage (V)")
+        ax2.set_title(f"Impact Response (Wetness={wetness})")
+        ax2.grid(True, linestyle='--', alpha=0.5)
+        st.pyplot(fig2)
+
+    # 4. 顯示統計數據
+    avg_energy = np.mean(v**2) * 100 # 簡易指標
+    st.metric("預估平均能量指標", f"{avg_energy:.2f} mJ")
+
+
+
+
 import streamlit as st
 import numpy as np
 import pandas as pd
@@ -265,4 +324,5 @@ with tab2:
 
 # --- Footer ---
 st.markdown("---")
+
 st.markdown("<div style='text-align: center; color: #666; font-size: 0.8em;'>Eco-Rain Project | Science Edge Competition | Physics-Informed Digital Twin</div>", unsafe_allow_html=True)
