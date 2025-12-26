@@ -1,8 +1,7 @@
-import physics_core
 import streamlit as st
+import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
-import plotly.graph_objects as go
+import physics_core  # 必須確認這行有在最上面
 
 # --- 1. 頁面與樣式設定 ---
 st.set_page_config(
@@ -268,3 +267,74 @@ with tab2:
 st.markdown("---")
 
 st.markdown("<div style='text-align: center; color: #666; font-size: 0.8em;'>Eco-Rain Project | Science Edge Competition | Physics-Informed Digital Twin</div>", unsafe_allow_html=True)
+
+# --- 分隔線，區隔上方原本的內容 ---
+st.markdown("---") 
+
+# --- 標題區 ---
+st.header("數位孿生驗證：蒙地卡羅雨滴模擬")
+st.caption("基於 Marshall-Palmer 氣象分佈與 RK4 阻尼動力學模型")
+
+# --- 1. 設定模擬參數 (介面) ---
+col_ui1, col_ui2 = st.columns(2)
+with col_ui1:
+    # 設定降雨強度
+    mc_rain_rate = st.slider("降雨強度 (Rain Rate)", 10, 100, 50, format="%d mm/hr", key="mc_rain")
+with col_ui2:
+    # 設定水膜係數 (0=乾燥, 1=全濕)
+    mc_wetness = st.slider("水膜係數 (Wetness Factor)", 0.0, 1.0, 0.1, key="mc_wet")
+
+# --- 2. 按鈕觸發運算 ---
+if st.button("執行蒙地卡羅模擬 (Run Monte Carlo)"):
+    
+    # 顯示載入狀態
+    with st.spinner('正在生成 1,000 顆符合 Marshall-Palmer 分佈的隨機雨滴...'):
+        # 呼叫後端 physics_core 進行運算
+        masses, velocities = physics_core.generate_storm_profile(n_drops=1000, rain_rate_mmph=mc_rain_rate)
+    
+    st.success(f"模擬完成！成功生成 {len(masses)} 顆有效雨滴數據。")
+
+    # --- 3. 繪製圖表 ---
+    col_plot1, col_plot2 = st.columns(2)
+    
+    # [左圖] 雨滴速度分佈直方圖
+    with col_plot1:
+        st.subheader("1. 雨滴速度分佈 (機率驗證)")
+        fig, ax = plt.subplots(figsize=(5, 4))
+        # 繪製直方圖
+        ax.hist(velocities, bins=25, color='#4A90E2', edgecolor='black', alpha=0.7)
+        ax.set_xlabel("Terminal Velocity (m/s)")
+        ax.set_ylabel("Count")
+        ax.set_title(f"Marshall-Palmer Dist. (R={mc_rain_rate})")
+        st.pyplot(fig)
+        st.info("說明：此圖驗證模擬出的雨滴是否符合真實氣象統計分佈。")
+
+    # [右圖] RK4 動力學波形
+    with col_plot2:
+        st.subheader("2. 撞擊響應波形 (動力學)")
+        
+        # 隨機挑選一顆雨滴來進行詳細波形運算
+        idx = np.random.randint(0, len(masses))
+        
+        # 呼叫 physics_core 計算波形
+        t, v = physics_core.rk4_solver(
+            mass_beam=0.005,      # 懸臂樑質量 (kg)
+            k_spring=150,         # 彈簧常數
+            dt=0.0001,            # 時間步長
+            total_time=0.1,       # 模擬時長 0.1秒
+            drop_mass=masses[idx], 
+            drop_velocity=velocities[idx], 
+            wetness=mc_wetness
+        )
+        
+        fig2, ax2 = plt.subplots(figsize=(5, 4))
+        ax2.plot(t*1000, v, color='#FF6B6B', linewidth=2)
+        ax2.set_xlabel("Time (ms)")
+        ax2.set_ylabel("Voltage Output (V)")
+        ax2.set_title(f"Impact Response (Wetness={mc_wetness})")
+        ax2.grid(True, linestyle='--', alpha=0.5)
+        st.pyplot(fig2)
+        
+        # 計算簡單的能量指標
+        energy_metric = np.sum(v**2) * 100 
+        st.metric("預測單次撞擊能量指標", f"{energy_metric:.2f} mJ")
