@@ -12,9 +12,10 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 自定義 CSS (學術風格)
+# 自定義 CSS (修正：強制文字顏色，避免深色模式下看不到字)
 st.markdown("""
 <style>
+    /* 全局樣式修正 */
     .metric-card {
         background-color: #f5f5f5;
         border: 1px solid #e0e0e0;
@@ -22,24 +23,42 @@ st.markdown("""
         padding: 15px;
         border-left: 5px solid #2e7d32;
         margin-bottom: 10px;
-        color: #000000;
+        color: #000000 !important; /* 強制黑色文字 */
     }
     .metric-card h4 {
         margin-top: 0;
-        color: #333;
+        color: #000000 !important;
         font-family: 'Arial', sans-serif;
         font-size: 16px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
+    .metric-card p {
+        color: #333333 !important;
+    }
+    
+    /* 理論區塊樣式 (修正白字問題) */
     .theory-box {
-        background-color: #f8f9fa;
+        background-color: #ffffff;
         padding: 20px;
-        border-radius: 5px;
+        border-radius: 8px;
         border: 1px solid #ddd;
         margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-    h1, h2, h3 { font-family: 'Arial', sans-serif; color: #2c3e50; }
+    /* 強制設定 theory-box 內的所有層級文字為深色 */
+    .theory-box h4 {
+        color: #1565c0 !important; /* 深藍色標題 */
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+    .theory-box p, .theory-box li, .theory-box span {
+        color: #212121 !important; /* 深灰色內文 */
+        font-size: 1.05em;
+        line-height: 1.6;
+    }
+    
+    h1, h2, h3 { font-family: 'Arial', sans-serif; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -116,64 +135,80 @@ engine = PhysicsEngine(area=param_area, fn=param_fn)
 st.sidebar.markdown("---")
 st.sidebar.text("Developed for Science Edge 2025")
 
-# --- 4. 分頁內容 (更新為三個分頁) ---
+# --- 4. 分頁內容 ---
 tab_theory, tab_lab, tab_field = st.tabs(["理論架構與邏輯 (Theory)", "物理實驗室 (Lab Mode)", "場域模擬 (Field Mode)"])
 
-# ================= TAB 1: 理論架構 (新增) =================
+# ================= TAB 1: 理論架構 (已修正顯示問題 + 新增追蹤理論) =================
 with tab_theory:
-    st.markdown("### 系統運算邏輯與物理模型")
-    st.markdown("本數位孿生系統 (Digital Twin) 結合流體力學與壓電材料動力學，透過數值分析預測系統表現。")
+    st.header("系統運算邏輯與物理模型")
+    st.markdown("本數位孿生系統結合流體力學、壓電材料動力學與幾何向量分析，透過數值預測系統表現。")
     
+    # 第一排：輸入模型 與 動力學模型
     col_t1, col_t2 = st.columns(2)
     
     with col_t1:
         st.markdown("""
         <div class="theory-box">
-        <h4>1. 氣象輸入模型 (Input Model)</h4>
-        <p>雨滴並非均勻大小。我們採用 <b>Marshall-Palmer 分佈</b> 來描述真實降雨中的雨滴粒徑分佈：</p>
+        <h4>1. 氣象輸入模型 (Stochastic Input)</h4>
+        <p>雨滴並非均勻大小。我們採用 <b>Marshall-Palmer 分佈</b> 來描述真實降雨中的雨滴粒徑機率密度：</p>
         </div>
         """, unsafe_allow_html=True)
         st.latex(r"N(D) = N_0 e^{-\Lambda D}")
-        st.markdown("""
-        其中 $N(D)$ 為雨滴數量密度，$D$ 為直徑，$\Lambda$ 取決於降雨強度 (Rain Rate)。
-        基於此，我們進一步推算雨滴的<b>終端速度 (Terminal Velocity)</b>：
-        """)
-        st.latex(r"v_t = a D^b \quad (\text{Atlas et al.})")
-        st.info("Logic: 程式根據輸入的 mm/hr，逆推產生符合物理統計特性的隨機雨滴群。")
+        st.markdown("其中 $\Lambda$ 取決於降雨強度 (Rain Rate)。基於此，我們利用 **Atlas et al.** 的經驗公式推算終端速度：")
+        st.latex(r"v_t = 9.65 - 10.3 e^{-0.6D}")
+        st.info("Logic: 程式根據輸入的 mm/hr，逆推產生符合物理統計特性的隨機雨滴群 (Monte Carlo Generation)。")
 
     with col_t2:
         st.markdown("""
         <div class="theory-box">
-        <h4>2. 壓電動力學模型 (Dynamics Model)</h4>
-        <p>壓電懸臂樑被建模為一個<b>二階阻尼彈簧-質量系統 (Second-order Spring-Mass-Damper System)</b>。</p>
+        <h4>2. 壓電動力學模型 (Dynamics)</h4>
+        <p>壓電懸臂樑被建模為一個<b>二階阻尼彈簧-質量系統</b> (Second-order Spring-Mass-Damper System)。</p>
         </div>
         """, unsafe_allow_html=True)
         st.latex(r"m_{eff} \ddot{x} + c \dot{x} + k x = F_{impact}(t)")
-        st.markdown("""
-        為了精確模擬雨滴撞擊瞬間的電壓響應，我們不使用簡單的線性估算，而是採用 <b>Runge-Kutta 4th Order (RK4)</b> 數值方法進行微分方程求解。
-        """)
-        st.latex(r"V_{out}(t) \propto \text{Strain}(t) \propto x(t)")
-        st.info("Logic: 透過 RK4 積分器，我們能以 0.1ms 的解析度還原撞擊後的電壓波形。")
+        st.markdown("為了精確模擬雨滴撞擊瞬間的非線性響應，我們採用 **Runge-Kutta 4th Order (RK4)** 數值方法進行微分方程求解，而非簡單的線性疊加。")
+        st.latex(r"V_{out}(t) \propto d_{31} \cdot \epsilon(t)")
+        st.info("Logic: 透過 RK4 積分器，我們能以 0.1ms 的解析度還原撞擊後的電壓波形與能量耗散。")
 
     st.markdown("---")
     
-    st.markdown("### 3. 系統效益優化邏輯 (Optimization Logic)")
-    st.markdown("本研究的核心創新在於「智慧追蹤系統」，其數學原理基於動量傳遞效率的改善。")
+    # 第二排：新增的「薄膜自動追蹤」部分
+    st.subheader("3. 壓電薄膜自動追蹤機制 (Smart Tracking Design)")
+    st.markdown("針對戶外側風造成的能量損失，本系統導入向量追蹤演算法，透過伺服馬達即時調整壓電片角度。")
     
     col_t3, col_t4 = st.columns([1, 1])
+    
     with col_t3:
-        st.subheader("固定式系統 (Fixed)")
-        st.markdown("當側風存在時，雨滴以角度 $\\theta$ 撞擊壓電片。有效垂直分力受到餘弦損失 (Cosine Loss) 影響：")
-        st.latex(r"F_{eff} = F_{rain} \times \cos(\theta_{wind})")
-        st.warning("隨著風速增加，撞擊角度變大，有效能量顯著衰減。")
+        st.markdown("""
+        <div class="theory-box">
+        <h4>向量合成原理 (Vector Analysis)</h4>
+        <p>雨滴在風場中受到水平風速 ($V_w$) 與垂直終端速度 ($V_t$) 的共同作用，形成合成速度向量 ($V_{resultant}$)。</p>
+        <p>撞擊角度 $\\theta$ 計算如下：</p>
+        </div>
+        """, unsafe_allow_html=True)
+        st.latex(r"\theta_{impact} = \arctan\left(\frac{V_{wind}}{V_{term}}\right)")
         
-    with col_t4:
-        st.subheader("智慧追蹤系統 (Smart)")
-        st.markdown("系統即時偵測風向並調整壓電片角度，使 $\\theta \\to 0$。此時效率最大化：")
-        st.latex(r"F_{eff} \approx F_{rain} \times \cos(0^\circ) = F_{rain}")
-        st.success("理論上可挽回因側風損失的動能，並減少水膜堆積帶來的阻尼效應。")
+        st.markdown("**能量損失機制：**")
+        st.markdown("若壓電片保持水平，有效撞擊力僅為垂直分量，造成餘弦損失 (Cosine Loss)：")
+        st.latex(r"E_{fixed} \propto (F \cdot \cos\theta)^2")
 
-# ================= TAB 2: 物理實驗室 (原本的 Tab 1) =================
+    with col_t4:
+        st.markdown("""
+        <div class="theory-box">
+        <h4>自動補償邏輯 (Optimization Logic)</h4>
+        <p>系統透過風速計回傳數據，即時計算最佳傾角 $\\phi_{opt}$，使壓電片法向量與雨滴路徑平行。</p>
+        </div>
+        """, unsafe_allow_html=True)
+        st.latex(r"\phi_{opt} = \theta_{impact}")
+        st.markdown("""
+        **優化效益：**
+        1. **動能最大化**：消除餘弦損失，使 $F_{eff} \approx F_{total}$。
+        2. **頻率響應優化**：垂直撞擊能更有效激發 $d_{31}$ 模式的形變。
+        3. **排水效應**：傾斜角度有助於破壞表面水膜張力，減少阻尼 ($c$)。
+        """)
+        st.success("Logic: 數位孿生模型即時計算此幾何關係，動態調整每個時間步長的能量轉換效率係數 (Efficiency Factor)。")
+
+# ================= TAB 2: 物理實驗室 =================
 with tab_lab:
     st.markdown("#### 變因控制實驗")
     st.markdown("在此模式下，可獨立控制降雨強度與撞擊頻率，以驗證系統的物理極限與波形響應。")
@@ -228,7 +263,7 @@ with tab_lab:
         fig.update_layout(xaxis_title="Time (ms)", yaxis_title="Voltage (Normalized)", height=400, margin=dict(l=20, r=20, t=30, b=20))
         st.plotly_chart(fig, use_container_width=True)
 
-# ================= TAB 3: 場域模擬 (原本的 Tab 2) =================
+# ================= TAB 3: 場域模擬 =================
 with tab_field:
     st.markdown("#### 真實情境模擬")
     st.markdown("在此模式下，撞擊頻率由**Marshall-Palmer 模型**根據降雨強度自動推算。")
