@@ -1,7 +1,9 @@
 import streamlit as st
 import matplotlib.pyplot as plt
 import numpy as np
-import physics_core  # 必須確認這行有在最上面
+import pandas as pd              # <--- 新增：為了處理 CSV 和數據表
+import plotly.graph_objects as go # <--- 新增：為了畫互動式圖表 (go.Figure)
+import physics_core              # 核心運算模組
 
 # --- 1. 頁面與樣式設定 ---
 st.set_page_config(
@@ -265,7 +267,6 @@ with tab2:
 
 # --- Footer ---
 st.markdown("---")
-
 st.markdown("<div style='text-align: center; color: #666; font-size: 0.8em;'>Eco-Rain Project | Science Edge Competition | Physics-Informed Digital Twin</div>", unsafe_allow_html=True)
 
 # --- 分隔線，區隔上方原本的內容 ---
