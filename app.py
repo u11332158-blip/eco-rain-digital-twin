@@ -1,9 +1,9 @@
 import streamlit as st
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd              # <--- 新增：為了處理 CSV 和數據表
-import plotly.graph_objects as go # <--- 新增：為了畫互動式圖表 (go.Figure)
-import physics_core              # 核心運算模組
+import pandas as pd
+import plotly.graph_objects as go
+import physics_core
 
 # --- 1. 頁面與樣式設定 ---
 st.set_page_config(
@@ -12,7 +12,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 自定義 CSS (學術風格，無圖示)
+# 自定義 CSS (學術風格)
 st.markdown("""
 <style>
     .metric-card {
@@ -32,10 +32,12 @@ st.markdown("""
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
-    .status-text {
-        font-weight: bold;
-        font-size: 1.1em;
-        margin-top: 10px;
+    .theory-box {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+        margin-bottom: 20px;
     }
     h1, h2, h3 { font-family: 'Arial', sans-serif; color: #2c3e50; }
 </style>
@@ -45,39 +47,30 @@ st.markdown("""
 class PhysicsEngine:
     def __init__(self, area=2.5, fn=100):
         self.area = area
-        self.fn = fn # 自然頻率
+        self.fn = fn 
 
     def get_params(self, rain, wind, mode="Fixed", freq_override=None):
-        # 1. 物理常數計算 (基於 Marshall-Palmer 分布)
         if rain <= 0: return 0, 0.008, 0, 0, 0, 0
         
-        D0 = 0.9 * (rain ** 0.21) # 雨滴直徑 (mm)
-        V_term = 3.778 * (D0 ** 0.67) # 終端速度 (m/s)
+        D0 = 0.9 * (rain ** 0.21) 
+        V_term = 3.778 * (D0 ** 0.67) 
         
-        # 2. 決定撞擊頻率 (Hz)
         if freq_override is not None:
-            # [Lab Mode] 使用者手動強制設定頻率
             freq_est = freq_override
         else:
-            # [Field Mode] 依據物理模型自動估算
-            # 簡化模型: 雨量越大，頻率越高
             freq_est = (rain / 100.0) * 60.0 
             if freq_est < 1: freq_est = 1 
         
-        # 3. 阻尼比 (Zeta) 計算
-        # 濕度模型: 降雨強度影響表面水膜厚度
         wetness = min(1.0, rain / 120.0)
-        if mode == "Smart": wetness *= 0.2 # 智慧排水系統降低濕度
-        zeta = 0.008 + (0.07 * wetness) # 基礎阻尼 + 水膜增量
+        if mode == "Smart": wetness *= 0.2 
+        zeta = 0.008 + (0.07 * wetness) 
         
-        # 4. 角度效率 (Cosine Loss) 計算
         if mode == "Smart":
-            eff_angle = 1.0 # 智慧追蹤保持垂直
+            eff_angle = 1.0 
         else:
             theta = np.arctan(wind / (V_term if V_term>0 else 1))
             eff_angle = max(0, np.cos(theta))
             
-        # 5. 時間常數 (Tau) 計算
         wn = 2 * np.pi * self.fn
         tau = 1 / (zeta * wn)
         wd = wn * np.sqrt(1 - zeta**2)
@@ -89,12 +82,9 @@ st.title("Eco-Rain: 壓電雨能採集數位孿生系統")
 st.caption("Physics-Informed Digital Twin Platform")
 st.sidebar.markdown("### 全域設定 (Global Settings)")
 
-# [關鍵更新] 強調材料模型 (Material Model)
 st.sidebar.markdown("**目標材料模型 (Target Material):**")
-# 使用 info 區塊顯著標示，強調硬體規格的一致性
 st.sidebar.info("TE Connectivity LDT0-028K (PVDF)")
 
-# [加分項] 展開顯示 Datasheet 參數，證明模擬的物理嚴謹性
 with st.sidebar.expander("查看材料物理參數 (Datasheet Specs)"):
     st.markdown("""
     <div style='font-size: 0.85em; color: #555;'>
@@ -106,7 +96,6 @@ with st.sidebar.expander("查看材料物理參數 (Datasheet Specs)"):
     </div>
     """, unsafe_allow_html=True)
 
-# 初始化引擎
 st.sidebar.markdown("**幾何與頻率參數 (Geometry & Frequency):**")
 
 param_area = st.sidebar.number_input(
@@ -123,41 +112,87 @@ param_fn = st.sidebar.number_input(
     help="Measured 1st mode natural frequency of the LDT0-028K cantilever."
 )
 
-# 實例化物理引擎
 engine = PhysicsEngine(area=param_area, fn=param_fn)
 st.sidebar.markdown("---")
-st.sidebar.markdown("**模式說明：**")
-st.sidebar.text("1. 物理機制實驗室 (Lab Mode)\n   用於驗證波形截斷理論。")
-st.sidebar.text("2. 真實場域模擬 (Field Mode)\n   用於預測長期發電效益。")
+st.sidebar.text("Developed for Science Edge 2025")
 
-# --- 4. 分頁內容 ---
-tab1, tab2 = st.tabs(["物理機制實驗室 (Lab Mode)", "真實場域模擬 (Field Mode)"])
+# --- 4. 分頁內容 (更新為三個分頁) ---
+tab_theory, tab_lab, tab_field = st.tabs(["理論架構與邏輯 (Theory)", "物理實驗室 (Lab Mode)", "場域模擬 (Field Mode)"])
 
-# ================= TAB 1: 物理機制實驗室 =================
-with tab1:
+# ================= TAB 1: 理論架構 (新增) =================
+with tab_theory:
+    st.markdown("### 系統運算邏輯與物理模型")
+    st.markdown("本數位孿生系統 (Digital Twin) 結合流體力學與壓電材料動力學，透過數值分析預測系統表現。")
+    
+    col_t1, col_t2 = st.columns(2)
+    
+    with col_t1:
+        st.markdown("""
+        <div class="theory-box">
+        <h4>1. 氣象輸入模型 (Input Model)</h4>
+        <p>雨滴並非均勻大小。我們採用 <b>Marshall-Palmer 分佈</b> 來描述真實降雨中的雨滴粒徑分佈：</p>
+        </div>
+        """, unsafe_allow_html=True)
+        st.latex(r"N(D) = N_0 e^{-\Lambda D}")
+        st.markdown("""
+        其中 $N(D)$ 為雨滴數量密度，$D$ 為直徑，$\Lambda$ 取決於降雨強度 (Rain Rate)。
+        基於此，我們進一步推算雨滴的<b>終端速度 (Terminal Velocity)</b>：
+        """)
+        st.latex(r"v_t = a D^b \quad (\text{Atlas et al.})")
+        st.info("Logic: 程式根據輸入的 mm/hr，逆推產生符合物理統計特性的隨機雨滴群。")
+
+    with col_t2:
+        st.markdown("""
+        <div class="theory-box">
+        <h4>2. 壓電動力學模型 (Dynamics Model)</h4>
+        <p>壓電懸臂樑被建模為一個<b>二階阻尼彈簧-質量系統 (Second-order Spring-Mass-Damper System)</b>。</p>
+        </div>
+        """, unsafe_allow_html=True)
+        st.latex(r"m_{eff} \ddot{x} + c \dot{x} + k x = F_{impact}(t)")
+        st.markdown("""
+        為了精確模擬雨滴撞擊瞬間的電壓響應，我們不使用簡單的線性估算，而是採用 <b>Runge-Kutta 4th Order (RK4)</b> 數值方法進行微分方程求解。
+        """)
+        st.latex(r"V_{out}(t) \propto \text{Strain}(t) \propto x(t)")
+        st.info("Logic: 透過 RK4 積分器，我們能以 0.1ms 的解析度還原撞擊後的電壓波形。")
+
+    st.markdown("---")
+    
+    st.markdown("### 3. 系統效益優化邏輯 (Optimization Logic)")
+    st.markdown("本研究的核心創新在於「智慧追蹤系統」，其數學原理基於動量傳遞效率的改善。")
+    
+    col_t3, col_t4 = st.columns([1, 1])
+    with col_t3:
+        st.subheader("固定式系統 (Fixed)")
+        st.markdown("當側風存在時，雨滴以角度 $\\theta$ 撞擊壓電片。有效垂直分力受到餘弦損失 (Cosine Loss) 影響：")
+        st.latex(r"F_{eff} = F_{rain} \times \cos(\theta_{wind})")
+        st.warning("隨著風速增加，撞擊角度變大，有效能量顯著衰減。")
+        
+    with col_t4:
+        st.subheader("智慧追蹤系統 (Smart)")
+        st.markdown("系統即時偵測風向並調整壓電片角度，使 $\\theta \\to 0$。此時效率最大化：")
+        st.latex(r"F_{eff} \approx F_{rain} \times \cos(0^\circ) = F_{rain}")
+        st.success("理論上可挽回因側風損失的動能，並減少水膜堆積帶來的阻尼效應。")
+
+# ================= TAB 2: 物理實驗室 (原本的 Tab 1) =================
+with tab_lab:
     st.markdown("#### 變因控制實驗")
     st.markdown("在此模式下，可獨立控制降雨強度與撞擊頻率，以驗證系統的物理極限與波形響應。")
     col_ctrl, col_viz = st.columns([1, 2])
     
     with col_ctrl:
         st.subheader("參數控制")
-        
-        # 手動頻率滑桿
         val_rain = st.slider("1. 降雨強度 (Rain Intensity)", 0, 150, 50, format="%d mm/hr")
         val_wind = st.slider("2. 風速 (Wind Speed)", 0.0, 30.0, 5.0, format="%.1f m/s")
         val_freq = st.slider("3. 撞擊頻率 (Impact Freq)", 5, 120, 30, format="%d Hz", 
                              help="手動設定每秒撞擊次數")
 
-        # 計算物理參數 (傳入 freq_override)
         _, z_f, eff_f, tau_f, wd, _ = engine.get_params(val_rain, val_wind, "Fixed", freq_override=val_freq)
         _, z_s, eff_s, tau_s, _, _  = engine.get_params(val_rain, val_wind, "Smart", freq_override=val_freq)
         
-        # 計算關鍵指標
-        time_window = 3 * tau_f * 1000 # ms (3倍時間常數)
-        impact_period = 1000 / val_freq # ms (撞擊週期)
+        time_window = 3 * tau_f * 1000 
+        impact_period = 1000 / val_freq 
         is_truncated = impact_period < time_window
 
-        # 顯示關鍵指標卡片 (動態變色)
         status_color = "#d32f2f" if is_truncated else "#2e7d32"
         status_text = "[Warning] 波形截斷 (Waveform Truncated)" if is_truncated else "[Status] 完整釋放 (Full Decay)"
         
@@ -174,53 +209,41 @@ with tab1:
 
     with col_viz:
         st.subheader("微觀視圖：阻尼震盪波形")
-        
-        # 繪圖
-        t = np.linspace(0, 0.15, 1000) # 顯示 150ms
+        t = np.linspace(0, 0.15, 1000) 
         T_impact = 1 / val_freq
         
-        # 計算波形
         amp_f = 1.0 * eff_f
-        # 模擬連續兩次撞擊的波形疊加 (簡化顯示)
         wave_f = amp_f * np.exp(-z_f * 2 * np.pi * param_fn * t) * np.sin(wd * t)
         wave_s = 1.0 * eff_s * np.exp(-z_s * 2 * np.pi * param_fn * t) * np.sin(wd * t)
         
         mask = t <= T_impact
         
         fig = go.Figure()
-        # Smart
         fig.add_trace(go.Scatter(x=t[mask]*1000, y=wave_s[mask], mode='lines', name='Smart System', line=dict(color='#2e7d32', width=3)))
         fig.add_trace(go.Scatter(x=t[~mask]*1000, y=wave_s[~mask], mode='lines', line=dict(color='#2e7d32', width=1, dash='dot'), showlegend=False))
-        # Fixed
         fig.add_trace(go.Scatter(x=t[mask]*1000, y=wave_f[mask], mode='lines', name='Fixed System', line=dict(color='#c62828', width=3)))
         
-        # 下一次撞擊線
         fig.add_vline(x=T_impact*1000, line_dash="dash", line_color="black", annotation_text="Next Impact")
         
         fig.update_layout(xaxis_title="Time (ms)", yaxis_title="Voltage (Normalized)", height=400, margin=dict(l=20, r=20, t=30, b=20))
         st.plotly_chart(fig, use_container_width=True)
 
-# ================= TAB 2: 數位孿生模擬 =================
-with tab2:
+# ================= TAB 3: 場域模擬 (原本的 Tab 2) =================
+with tab_field:
     st.markdown("#### 真實情境模擬")
     st.markdown("在此模式下，撞擊頻率由**Marshall-Palmer 模型**根據降雨強度自動推算。")
     col_input, col_sim = st.columns([1, 3])
     
     with col_input:
         st.subheader("模擬參數")
-        
-        # 模擬時長設定
         sim_duration = st.slider("模擬時長 (小時)", 1, 24, 12)
-        
         uploaded_file = st.file_uploader("上傳氣象數據 CSV (Time, Rain, Wind)", type=["csv"])
         
         if uploaded_file:
             df = pd.read_csv(uploaded_file)
             data_source = "User Upload Data"
         else:
-            # 動態生成數據
-            h = np.arange(0, sim_duration + 1, 1) # 根據設定的時長
-            # 模擬颱風路徑 (Gaussian Peak)
+            h = np.arange(0, sim_duration + 1, 1) 
             peak_time = sim_duration / 2
             r = 10 + 100 * np.exp(-0.5 * (h - peak_time)**2/2.5) 
             w = 5 + 25 * np.exp(-0.5 * (h - peak_time)**2/3) + np.random.normal(0, 2, len(h))
@@ -231,28 +254,24 @@ with tab2:
             st.dataframe(df, height=150)
 
     with col_sim:
-        # 執行模擬運算
         acc_s_list, acc_f_list = [], []
         cum_s, cum_f = 0, 0
         
         for idx, row in df.iterrows():
             R, W = row['Rain'], row['Wind']
             
-            # Smart Calc (不傳入 freq_override -> 自動計算)
             f_s, z_s, eff_s, tau_s, _, _ = engine.get_params(R, W, "Smart")
-            trunc_s = 1 / (1 + 0.6 * f_s * tau_s) # 截斷因子
+            trunc_s = 1 / (1 + 0.6 * f_s * tau_s) 
             power_s = f_s * (eff_s**2) * trunc_s * (R**0.5) 
             cum_s += power_s
             acc_s_list.append(cum_s)
             
-            # Fixed Calc
             f_f, z_f, eff_f, tau_f, _, _ = engine.get_params(R, W, "Fixed")
             trunc_f = 1 / (1 + 0.6 * f_f * tau_f)
             power_f = f_f * (eff_f**2) * trunc_f * (R**0.5)
             cum_f += power_f
             acc_f_list.append(cum_f)
             
-        # 顯示結果
         gain = ((cum_s - cum_f) / cum_f) * 100 if cum_f > 0 else 0
         m1, m2, m3 = st.columns(3)
         m1.metric("固定式總產出 (Total Energy - Fixed)", f"{int(cum_f):,}", "Baseline")
@@ -269,7 +288,7 @@ with tab2:
 st.markdown("---")
 st.markdown("<div style='text-align: center; color: #666; font-size: 0.8em;'>Eco-Rain Project | Science Edge Competition | Physics-Informed Digital Twin</div>", unsafe_allow_html=True)
 
-# --- 分隔線，區隔上方原本的內容 ---
+# --- 分隔線 ---
 st.markdown("---") 
 
 # --- 標題區 ---
@@ -279,30 +298,23 @@ st.caption("基於 Marshall-Palmer 氣象分佈與 RK4 阻尼動力學模型")
 # --- 1. 設定模擬參數 (介面) ---
 col_ui1, col_ui2 = st.columns(2)
 with col_ui1:
-    # 設定降雨強度
     mc_rain_rate = st.slider("降雨強度 (Rain Rate)", 10, 100, 50, format="%d mm/hr", key="mc_rain")
 with col_ui2:
-    # 設定水膜係數 (0=乾燥, 1=全濕)
     mc_wetness = st.slider("水膜係數 (Wetness Factor)", 0.0, 1.0, 0.1, key="mc_wet")
 
 # --- 2. 按鈕觸發運算 ---
 if st.button("執行蒙地卡羅模擬 (Run Monte Carlo)"):
     
-    # 顯示載入狀態
     with st.spinner('正在生成 1,000 顆符合 Marshall-Palmer 分佈的隨機雨滴...'):
-        # 呼叫後端 physics_core 進行運算
         masses, velocities = physics_core.generate_storm_profile(n_drops=1000, rain_rate_mmph=mc_rain_rate)
     
     st.success(f"模擬完成！成功生成 {len(masses)} 顆有效雨滴數據。")
 
-    # --- 3. 繪製圖表 ---
     col_plot1, col_plot2 = st.columns(2)
     
-    # [左圖] 雨滴速度分佈直方圖
     with col_plot1:
         st.subheader("1. 雨滴速度分佈 (機率驗證)")
         fig, ax = plt.subplots(figsize=(5, 4))
-        # 繪製直方圖
         ax.hist(velocities, bins=25, color='#4A90E2', edgecolor='black', alpha=0.7)
         ax.set_xlabel("Terminal Velocity (m/s)")
         ax.set_ylabel("Count")
@@ -310,19 +322,16 @@ if st.button("執行蒙地卡羅模擬 (Run Monte Carlo)"):
         st.pyplot(fig)
         st.info("說明：此圖驗證模擬出的雨滴是否符合真實氣象統計分佈。")
 
-    # [右圖] RK4 動力學波形
     with col_plot2:
         st.subheader("2. 撞擊響應波形 (動力學)")
         
-        # 隨機挑選一顆雨滴來進行詳細波形運算
         idx = np.random.randint(0, len(masses))
         
-        # 呼叫 physics_core 計算波形
         t, v = physics_core.rk4_solver(
-            mass_beam=0.005,      # 懸臂樑質量 (kg)
-            k_spring=150,         # 彈簧常數
-            dt=0.0001,            # 時間步長
-            total_time=0.1,       # 模擬時長 0.1秒
+            mass_beam=0.005,      
+            k_spring=150,         
+            dt=0.0001,           
+            total_time=0.1,       
             drop_mass=masses[idx], 
             drop_velocity=velocities[idx], 
             wetness=mc_wetness
@@ -336,6 +345,5 @@ if st.button("執行蒙地卡羅模擬 (Run Monte Carlo)"):
         ax2.grid(True, linestyle='--', alpha=0.5)
         st.pyplot(fig2)
         
-        # 計算簡單的能量指標
         energy_metric = np.sum(v**2) * 100 
         st.metric("預測單次撞擊能量指標", f"{energy_metric:.2f} mJ")
