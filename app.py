@@ -3,7 +3,95 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-import physics_core
+
+# ==========================================
+# 核心物理運算區 (Physics Core) - 補回的部分
+# ==========================================
+def generate_storm_profile(n_drops=1000, rain_rate_mmph=50):
+    """
+    基於 Marshall-Palmer 分佈生成隨機雨滴群
+    回傳: (質量陣列, 速度陣列)
+    """
+    # 1. 計算 Lambda 參數 (Marshall-Palmer)
+    # N(D) = N0 * e^(-lambda * D)
+    lam = 4.1 * (rain_rate_mmph ** -0.21)
+    
+    # 2. 逆變換採樣 (Inverse Transform Sampling) 生成雨滴直徑
+    # D = -ln(1-u) / lambda
+    u = np.random.uniform(0, 1, n_drops)
+    diameters_mm = -np.log(1 - u) / lam
+    
+    # 過濾掉不合理的極端值 (例如 > 6mm 的雨滴極少見)
+    diameters_mm = np.clip(diameters_mm, 0.1, 6.0)
+    
+    # 3. 計算終端速度 (Atlas et al. 經驗公式)
+    # v = 9.65 - 10.3 * exp(-0.6 * D)
+    velocities = 9.65 - 10.3 * np.exp(-0.6 * diameters_mm)
+    velocities = np.clip(velocities, 0, None)
+    
+    # 4. 計算質量 (假設球體，水密度=1 mg/mm^3)
+    # Mass = Volume * Density = (4/3 * pi * r^3) * 1
+    masses_mg = (4/3) * np.pi * (diameters_mm / 2)**3
+    
+    return masses_mg, velocities
+
+def rk4_solver(mass_beam, k_spring, dt, total_time, drop_mass, drop_velocity, wetness):
+    """
+    Runge-Kutta 4th Order (RK4) 數值積分求解器
+    模擬壓電片受撞擊後的二階阻尼震盪
+    """
+    # 1. 計算阻尼係數 (c)
+    # wn = sqrt(k/m), zeta = c / (2*m*wn) => c = zeta * 2 * m * wn
+    wn = np.sqrt(k_spring / mass_beam)
+    zeta = 0.008 + (0.07 * wetness) # 濕度越高，阻尼越大
+    c_damp = 2 * zeta * mass_beam * wn
+    
+    # 2. 初始狀態 [位置 x, 速度 v]
+    state = np.array([0.0, 0.0])
+    
+    # 3. 定義撞擊力 (Impulse)
+    # 假設撞擊為一個極短時間的三角形脈衝
+    impact_duration = 0.002 # 2ms 接觸時間
+    # 動量變化 F * dt = dp => Peak Force approx (m*v) / (dt/2)
+    peak_force = (drop_mass * 1e-6 * drop_velocity) / (impact_duration / 2)
+    
+    t_steps = np.arange(0, total_time, dt)
+    voltages = []
+    
+    # 4. 定義微分方程 (State Derivatives)
+    def derivatives(t, y):
+        x, v = y
+        # 外力函數 F(t)
+        F_ext = 0
+        if t < impact_duration:
+            if t < impact_duration/2:
+                F_ext = peak_force * (t / (impact_duration/2))
+            else:
+                F_ext = peak_force * (2 - t / (impact_duration/2))
+        
+        # 運動方程式: m*a + c*v + k*x = F
+        # 加速度 a = (F - c*v - k*x) / m
+        a = (F_ext - c_damp * v - k_spring * x) / mass_beam
+        return np.array([v, a])
+
+    # 5. RK4 積分迴圈
+    for t in t_steps:
+        k1 = derivatives(t, state)
+        k2 = derivatives(t + dt/2, state + k1*dt/2)
+        k3 = derivatives(t + dt/2, state + k2*dt/2)
+        k4 = derivatives(t + dt, state + k3*dt)
+        
+        state = state + (dt/6) * (k1 + 2*k2 + 2*k3 + k4)
+        
+        # 壓電電壓與形變量(位移)成正比
+        # 這裡乘上一個靈敏度係數做視覺化
+        voltages.append(state[0] * 50000) 
+        
+    return t_steps, np.array(voltages)
+
+# ==========================================
+# 主程式 (Main App)
+# ==========================================
 
 # --- 1. 頁面與樣式設定 ---
 st.set_page_config(
@@ -12,10 +100,9 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 自定義 CSS (修正：強制文字顏色，避免深色模式下看不到字)
+# 自定義 CSS (強制深色文字，解決顯示問題)
 st.markdown("""
 <style>
-    /* 全局樣式修正 */
     .metric-card {
         background-color: #f5f5f5;
         border: 1px solid #e0e0e0;
@@ -23,7 +110,7 @@ st.markdown("""
         padding: 15px;
         border-left: 5px solid #2e7d32;
         margin-bottom: 10px;
-        color: #000000 !important; /* 強制黑色文字 */
+        color: #000000 !important;
     }
     .metric-card h4 {
         margin-top: 0;
@@ -36,8 +123,6 @@ st.markdown("""
     .metric-card p {
         color: #333333 !important;
     }
-    
-    /* 理論區塊樣式 (修正白字問題) */
     .theory-box {
         background-color: #ffffff;
         padding: 20px;
@@ -46,23 +131,21 @@ st.markdown("""
         margin-bottom: 20px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-    /* 強制設定 theory-box 內的所有層級文字為深色 */
     .theory-box h4 {
-        color: #1565c0 !important; /* 深藍色標題 */
+        color: #1565c0 !important;
         font-weight: bold;
         margin-bottom: 10px;
     }
     .theory-box p, .theory-box li, .theory-box span {
-        color: #212121 !important; /* 深灰色內文 */
+        color: #212121 !important;
         font-size: 1.05em;
         line-height: 1.6;
     }
-    
     h1, h2, h3 { font-family: 'Arial', sans-serif; }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. 核心物理引擎 (Physics Engine) ---
+# --- 2. 簡易物理引擎類別 (用於 Tabs 顯示) ---
 class PhysicsEngine:
     def __init__(self, area=2.5, fn=100):
         self.area = area
@@ -138,7 +221,7 @@ st.sidebar.text("Developed for Science Edge 2025")
 # --- 4. 分頁內容 ---
 tab_theory, tab_lab, tab_field = st.tabs(["理論架構與邏輯 (Theory)", "物理實驗室 (Lab Mode)", "場域模擬 (Field Mode)"])
 
-# ================= TAB 1: 理論架構 (已修正顯示問題 + 新增追蹤理論) =================
+# ================= TAB 1: 理論架構 (修正公式排版) =================
 with tab_theory:
     st.header("系統運算邏輯與物理模型")
     st.markdown("本數位孿生系統結合流體力學、壓電材料動力學與幾何向量分析，透過數值預測系統表現。")
@@ -165,14 +248,14 @@ with tab_theory:
         <p>壓電懸臂樑被建模為一個<b>二階阻尼彈簧-質量系統</b> (Second-order Spring-Mass-Damper System)。</p>
         </div>
         """, unsafe_allow_html=True)
-        st.latex(r"m_{eff} \ddot{x} + c \dot{x} + k x = F_{impact}(t)")
+        st.latex(r"m_{\text{eff}} \ddot{x} + c \dot{x} + k x = F_{\text{impact}}(t)")
         st.markdown("為了精確模擬雨滴撞擊瞬間的非線性響應，我們採用 **Runge-Kutta 4th Order (RK4)** 數值方法進行微分方程求解，而非簡單的線性疊加。")
-        st.latex(r"V_{out}(t) \propto d_{31} \cdot \epsilon(t)")
+        st.latex(r"V_{\text{out}}(t) \propto d_{31} \cdot \epsilon(t)")
         st.info("Logic: 透過 RK4 積分器，我們能以 0.1ms 的解析度還原撞擊後的電壓波形與能量耗散。")
 
     st.markdown("---")
     
-    # 第二排：新增的「薄膜自動追蹤」部分
+    # 第二排：壓電薄膜自動追蹤機制
     st.subheader("3. 壓電薄膜自動追蹤機制 (Smart Tracking Design)")
     st.markdown("針對戶外側風造成的能量損失，本系統導入向量追蹤演算法，透過伺服馬達即時調整壓電片角度。")
     
@@ -182,27 +265,27 @@ with tab_theory:
         st.markdown("""
         <div class="theory-box">
         <h4>向量合成原理 (Vector Analysis)</h4>
-        <p>雨滴在風場中受到水平風速 ($V_w$) 與垂直終端速度 ($V_t$) 的共同作用，形成合成速度向量 ($V_{resultant}$)。</p>
+        <p>雨滴在風場中受到水平風速 ($V_{\text{wind}}$) 與垂直終端速度 ($V_{\text{term}}$) 的共同作用，形成合成速度向量 ($V_{\text{resultant}}$)。</p>
         <p>撞擊角度 $\\theta$ 計算如下：</p>
         </div>
         """, unsafe_allow_html=True)
-        st.latex(r"\theta_{impact} = \arctan\left(\frac{V_{wind}}{V_{term}}\right)")
+        st.latex(r"\theta_{\text{impact}} = \arctan\left(\frac{V_{\text{wind}}}{V_{\text{term}}}\right)")
         
         st.markdown("**能量損失機制：**")
         st.markdown("若壓電片保持水平，有效撞擊力僅為垂直分量，造成餘弦損失 (Cosine Loss)：")
-        st.latex(r"E_{fixed} \propto (F \cdot \cos\theta)^2")
+        st.latex(r"E_{\text{fixed}} \propto (F \cdot \cos\theta)^2")
 
     with col_t4:
         st.markdown("""
         <div class="theory-box">
         <h4>自動補償邏輯 (Optimization Logic)</h4>
-        <p>系統透過風速計回傳數據，即時計算最佳傾角 $\\phi_{opt}$，使壓電片法向量與雨滴路徑平行。</p>
+        <p>系統透過風速計回傳數據，即時計算最佳傾角 $\\phi_{\text{opt}}$，使壓電片法向量與雨滴路徑平行。</p>
         </div>
         """, unsafe_allow_html=True)
-        st.latex(r"\phi_{opt} = \theta_{impact}")
+        st.latex(r"\phi_{\text{opt}} = \theta_{\text{impact}}")
         st.markdown("""
         **優化效益：**
-        1. **動能最大化**：消除餘弦損失，使 $F_{eff} \approx F_{total}$。
+        1. **動能最大化**：消除餘弦損失，使 $F_{\text{eff}} \approx F_{\text{total}}$。
         2. **頻率響應優化**：垂直撞擊能更有效激發 $d_{31}$ 模式的形變。
         3. **排水效應**：傾斜角度有助於破壞表面水膜張力，減少阻尼 ($c$)。
         """)
@@ -337,11 +420,12 @@ with col_ui1:
 with col_ui2:
     mc_wetness = st.slider("水膜係數 (Wetness Factor)", 0.0, 1.0, 0.1, key="mc_wet")
 
-# --- 2. 按鈕觸發運算 ---
+# --- 2. 按鈕觸發運算 (修正：直接呼叫本地函式) ---
 if st.button("執行蒙地卡羅模擬 (Run Monte Carlo)"):
     
     with st.spinner('正在生成 1,000 顆符合 Marshall-Palmer 分佈的隨機雨滴...'):
-        masses, velocities = physics_core.generate_storm_profile(n_drops=1000, rain_rate_mmph=mc_rain_rate)
+        # 修正：直接呼叫上方定義的函式，不再使用 physics_core
+        masses, velocities = generate_storm_profile(n_drops=1000, rain_rate_mmph=mc_rain_rate)
     
     st.success(f"模擬完成！成功生成 {len(masses)} 顆有效雨滴數據。")
 
@@ -362,7 +446,8 @@ if st.button("執行蒙地卡羅模擬 (Run Monte Carlo)"):
         
         idx = np.random.randint(0, len(masses))
         
-        t, v = physics_core.rk4_solver(
+        # 修正：直接呼叫上方定義的函式
+        t, v = rk4_solver(
             mass_beam=0.005,      
             k_spring=150,         
             dt=0.0001,           
