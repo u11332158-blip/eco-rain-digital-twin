@@ -60,24 +60,56 @@ st.set_page_config(
 )
 
 # --- CSS 設定 ---
+# --- CSS 設定 (修正深色模式顯示問題) ---
 st.markdown("""
 <style>
+    /* 1. 針對 Metrics 卡片 (上方數據) */
     .metric-card {
-        background-color: #f5f5f5;
+        background-color: #f5f5f5 !important; /* 強制淺灰底 */
         border: 1px solid #e0e0e0;
         border-radius: 5px;
         padding: 15px;
         border-left: 5px solid #2e7d32;
         margin-bottom: 10px;
     }
-    .metric-card h4 {
-        margin-top: 0; color: #000000 !important; font-size: 16px; text-transform: uppercase;
+    /* 強制 Metric 卡片內所有文字為深色 */
+    .metric-card h4, .metric-card p, .metric-card span, .metric-card div {
+        color: #000000 !important;
     }
+
+    /* 2. 針對 Theory 理論卡片 (白色背景區) */
     .theory-box {
-        background-color: #ffffff; padding: 20px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        background-color: #ffffff !important; /* 強制白底 */
+        padding: 20px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
+    /* 關鍵修正：強制 Theory 卡片內的所有層級文字都變黑色 */
+    .theory-box h4 {
+        color: #1565c0 !important; /* 標題藍色 */
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+    .theory-box p, .theory-box li, .theory-box span, .theory-box div, .theory-box b {
+        color: #212121 !important; /* 內文深黑色 */
+        font-size: 1.05em;
+        line-height: 1.6;
+    }
+
+    /* 3. 針對 Citation 引用區塊 */
     .citation-box { 
-        background-color: #fff3e0; padding: 15px; border-radius: 5px; border-left: 5px solid #ff9800; font-size: 0.9em; margin-top: 20px;
+        background-color: #fff3e0 !important; /* 強制淺橘底 */
+        padding: 15px; 
+        border-radius: 5px; 
+        border-left: 5px solid #ff9800; 
+        font-size: 0.9em; 
+        margin-top: 20px;
+    }
+    /* 強制引用區塊內文字為深色 */
+    .citation-box p, .citation-box i, .citation-box b, .citation-box span {
+        color: #333333 !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -371,3 +403,4 @@ if st.button("執行蒙地卡羅模擬 (Monte Carlo)"):
         ax2.set_xlabel("Time (ms)")
         ax2.set_title(f"Single Drop Response (m={masses[idx]:.1f}mg)")
         st.pyplot(fig2)
+
