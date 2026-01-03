@@ -218,7 +218,7 @@ st.markdown("""
 # --- 語言選擇 (Language Selector) ---
 st.sidebar.markdown("### 🌐 Language / 語言 / 言語")
 selected_lang = st.sidebar.selectbox("Select Language", ["English", "繁體中文", "日本語"], label_visibility="collapsed")
-t = TRANSLATIONS[selected_lang] # 取得當前語言包
+t = TRANSLATIONS[selected_lang] 
 
 class PhysicsEngine:
     def __init__(self, area=2.5, fn=100, length=5.0):
@@ -257,8 +257,7 @@ st.caption("Physics-Informed Digital Twin Platform")
 st.sidebar.markdown(f"### {t['sidebar_settings']}")
 st.sidebar.markdown(f"**{t['target_material']}:**")
 st.sidebar.info("TE Connectivity LDT0-028K (PVDF)")
-# 在 st.sidebar 區域隨便找個地方加這行
-st.sidebar.error("DEBUG: 版本 V3.0 (國際版)")
+st.sidebar.error("DEBUG: 版本 V3.1 (修正文獻版)") # 更新了版本號，方便您確認
 
 param_beam_len = st.sidebar.number_input(t["beam_len"], 3.0, 10.0, 5.0, step=0.5)
 param_area = st.sidebar.number_input(t["area"], 0.5, 10.0, 2.5, format="%.1f")
@@ -273,7 +272,7 @@ st.sidebar.text(t["dev_credit"])
 # --- Tabs ---
 tab_theory, tab_lab, tab_field = st.tabs([t["tab_theory"], t["tab_lab"], t["tab_field"]])
 
-# ================= TAB 1: 理論 =================
+# ================= TAB 1: 理論 (文獻修正區) =================
 with tab_theory:
     st.header(t["theory_header"])
     col_t1, col_t2 = st.columns(2)
@@ -312,7 +311,7 @@ with tab_theory:
         """, unsafe_allow_html=True)
         st.latex(r"E_{gen} \propto \left(\frac{x}{L}\right)^2")
 
-    # APA References (Universal)
+    # APA References (已補回 [3])
     st.markdown("---")
     st.markdown("### 📚 References (APA)")
     st.markdown("""
@@ -320,9 +319,14 @@ with tab_theory:
     <p><b>[1] Raindrop Physics:</b><br>
     Marshall, J. S., & Palmer, W. M. (1948). The distribution of raindrops with size. <i>Journal of meteorology</i>, <i>5</i>(4), 165-166.<br>
     Gunn, R., & Kinzer, G. D. (1949). The terminal velocity of fall for water droplets in stagnant air. <i>Journal of meteorology</i>, <i>6</i>(4), 243-248.</p>
+    
     <p><b>[2] Piezoelectric Dynamics:</b><br>
-    Li, S., et al. (2016). Bi-resonant structure with piezoelectric PVDF films. <i>Sensors and Actuators A</i>.<br>
+    Li, S., Crovetto, A., et al. (2016). Bi-resonant structure with piezoelectric PVDF films. <i>Sensors and Actuators A</i>.<br>
     Gregorio, R., Jr., & Ueno, E. M. (1999). Effect of crystalline phase on PVDF properties. <i>Journal of Materials Science</i>.</p>
+    
+    <p><b>[3] Related Works & Inspiration:</b><br>
+    Yuk, J., Leem, A., Thomas, K., & Jung, S. (2025). Leaf-inspired rain-energy harvesting device. <i>Biological and Environmental Engineering, Cornell University</i>.<br>
+    Bowland, A., et al. (2010). New concepts in modeling damping in structures. <i>10th CCEE</i>.</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -463,4 +467,3 @@ if st.button(t["sim_start_btn"]):
         ax2.set_xlabel("Time (ms)")
         ax2.set_title(f"Single Drop Response")
         st.pyplot(fig2)
-
