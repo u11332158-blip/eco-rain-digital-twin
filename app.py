@@ -257,6 +257,8 @@ st.caption("Physics-Informed Digital Twin Platform")
 st.sidebar.markdown(f"### {t['sidebar_settings']}")
 st.sidebar.markdown(f"**{t['target_material']}:**")
 st.sidebar.info("TE Connectivity LDT0-028K (PVDF)")
+# 在 st.sidebar 區域隨便找個地方加這行
+st.sidebar.error("DEBUG: 版本 V3.0 (國際版)")
 
 param_beam_len = st.sidebar.number_input(t["beam_len"], 3.0, 10.0, 5.0, step=0.5)
 param_area = st.sidebar.number_input(t["area"], 0.5, 10.0, 2.5, format="%.1f")
@@ -461,3 +463,4 @@ if st.button(t["sim_start_btn"]):
         ax2.set_xlabel("Time (ms)")
         ax2.set_title(f"Single Drop Response")
         st.pyplot(fig2)
+
