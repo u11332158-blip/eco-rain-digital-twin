@@ -5,7 +5,7 @@ import pandas as pd
 import plotly.graph_objects as go
 
 # ==========================================
-# 1. 多語言字典 (Translation Dictionary)
+# 1. 多語言字典 (Translation Dictionary - V5.2 Fixed)
 # ==========================================
 TRANSLATIONS = {
     "English": {
@@ -20,14 +20,34 @@ TRANSLATIONS = {
         "tab_theory": "Theory & Logic",
         "tab_lab": "Physics Lab",
         "tab_field": "Field Simulation",
+        # Theory Tab (Full Keys)
         "theory_header": "Physics Logic & Models",
+        "theory_sec1": "1. Environmental Input Models (Nature)",
+        "theory_sec2": "2. System Dynamics (Hardware vs. Nature)",
+        "eq1_title": "Eq. 1: Stochastic Rain",
+        "eq1_desc": "Marshall-Palmer distribution for raindrop sizes.",
+        "eq2_title": "Eq. 2: Terminal Velocity",
+        "eq2_desc": "Gunn-Kinzer relation for air resistance correction.",
+        "eq3_title": "Eq. 3: Effective Impact Angle",
+        "eq3_desc": "Vector synthesis of wind and rain velocity.",
+        "eq4_title": "Eq. 4: Piezo-Dynamics",
+        "eq4_desc": "2nd-order system with moment arm scaling.",
+        "eq5_title": "Eq. 5: Ghost Damping (Nature)",
+        "eq5_desc": "Damping spikes as water film accumulates.",
+        "eq6_title": "Eq. 6: Solenoid Limit (Lab)",
+        "eq6_desc": "Force decays due to inductance lag at high freq.",
+        # Lab Tab
         "lab_ctrl": "Parameter Control",
         "lab_env": "Experiment A: Ghost Damping Effect",
         "lab_freq_sect": "Experiment B: Solenoid Hardware Limit",
         "lab_sweet_spot": "Set to Solenoid Limit",
         "lab_monitor": "Physics Monitor",
+        "lab_monitor_zeta": "Zeta (Damping)",
         "rain_rate": "Rain Rate (mm/hr)",
+        "wind_speed": "Wind Speed (m/s)",
         "impact_freq": "Impact Freq (Hz)",
+        "solenoid_eff": "Solenoid Force Efficiency",
+        # Field Tab
         "field_header": "Real-world Scenario Simulation",
         "sim_params": "Simulation Parameters",
         "sim_duration": "Duration (Hours)",
@@ -41,8 +61,7 @@ TRANSLATIONS = {
         "chart_cum_title": "Cumulative Energy Generation",
         "unit_energy": "mJ",
         "sim_start_btn": "Run Monte Carlo Sim",
-        "sim_success": "Generated {n} drops data.",
-        "solenoid_eff": "Solenoid Force Efficiency"
+        "sim_success": "Generated {n} drops data."
     },
     "繁體中文": {
         "title": "Eco-Rain: 壓電雨能採集數位孿生",
@@ -56,14 +75,34 @@ TRANSLATIONS = {
         "tab_theory": "理論架構",
         "tab_lab": "物理實驗室",
         "tab_field": "場域模擬",
+        # Theory Tab (Full Keys)
         "theory_header": "系統運算邏輯與物理模型",
+        "theory_sec1": "1. 環境物理模型 (大自然輸入)",
+        "theory_sec2": "2. 系統動力模型 (硬體限制 vs 自然限制)",
+        "eq1_title": "Eq. 1: 隨機降雨模型",
+        "eq1_desc": "Marshall-Palmer 雨滴粒徑分佈模型。",
+        "eq2_title": "Eq. 2: 終端速度修正",
+        "eq2_desc": "Gunn-Kinzer 空氣阻力修正公式。",
+        "eq3_title": "Eq. 3: 有效撞擊角度",
+        "eq3_desc": "風速與雨速的向量合成分析。",
+        "eq4_title": "Eq. 4: 壓電動力學",
+        "eq4_desc": "二階阻尼系統與力臂效應。",
+        "eq5_title": "Eq. 5: 幽靈阻尼 (自然限制)",
+        "eq5_desc": "隨著水膜累積，阻尼比急劇上升。",
+        "eq6_title": "Eq. 6: 電磁閥限制 (實驗室限制)",
+        "eq6_desc": "高頻時因電感滯後導致力道衰減。",
+        # Lab Tab
         "lab_ctrl": "變因控制實驗",
         "lab_env": "實驗 A：水膜阻尼效應 (Ghost Damping)",
         "lab_freq_sect": "實驗 B：電磁閥物理限制 (Solenoid Limit)",
         "lab_sweet_spot": "設定為電磁閥極限",
         "lab_monitor": "物理參數監控",
+        "lab_monitor_zeta": "阻尼比 (Zeta)",
         "rain_rate": "降雨強度 (mm/hr)",
+        "wind_speed": "環境風速 (m/s)",
         "impact_freq": "撞擊頻率 (Hz)",
+        "solenoid_eff": "電磁閥力道效率",
+        # Field Tab
         "field_header": "真實情境模擬",
         "sim_params": "模擬參數",
         "sim_duration": "模擬時長 (小時)",
@@ -77,8 +116,7 @@ TRANSLATIONS = {
         "chart_cum_title": "累積發電量模擬",
         "unit_energy": "mJ",
         "sim_start_btn": "執行蒙地卡羅模擬",
-        "sim_success": "成功生成 {n} 顆雨滴數據。",
-        "solenoid_eff": "電磁閥力道效率"
+        "sim_success": "成功生成 {n} 顆雨滴數據。"
     },
     "日本語": {
         "title": "Eco-Rain: 雨滴発電デジタルツイン",
@@ -92,14 +130,34 @@ TRANSLATIONS = {
         "tab_theory": "理論とロジック",
         "tab_lab": "物理実験室",
         "tab_field": "フィールド・シミュレーション",
+        # Theory Tab (Full Keys)
         "theory_header": "物理ロジックとモデル",
+        "theory_sec1": "1. 環境入力モデル (自然物理)",
+        "theory_sec2": "2. システムダイナミクス (ハードウェア vs 自然)",
+        "eq1_title": "Eq. 1: 確率降雨モデル",
+        "eq1_desc": "Marshall-Palmer 雨滴粒径分布。",
+        "eq2_title": "Eq. 2: 終端速度補正",
+        "eq2_desc": "Gunn-Kinzer 空気抵抗補正。",
+        "eq3_title": "Eq. 3: 有効衝突角度",
+        "eq3_desc": "風速と雨速のベクトル合成。",
+        "eq4_title": "Eq. 4: 圧電ダイナミクス",
+        "eq4_desc": "二次減衰系とモーメントアーム効果。",
+        "eq5_title": "Eq. 5: ゴースト減衰 (自然限界)",
+        "eq5_desc": "水膜の蓄積に伴い減衰比が急増。",
+        "eq6_title": "Eq. 6: ソレノイド限界 (実験室限界)",
+        "eq6_desc": "高周波時のインダクタンス遅延による力減衰。",
+        # Lab Tab
         "lab_ctrl": "パラメータ制御",
         "lab_env": "実験 A：水膜減衰効果",
         "lab_freq_sect": "実験 B：ソレノイド物理限界",
         "lab_sweet_spot": "ソレノイド限界設定",
         "lab_monitor": "物理パラメータ",
+        "lab_monitor_zeta": "減衰比 (Zeta)",
         "rain_rate": "降雨強度 (mm/hr)",
+        "wind_speed": "風速 (m/s)",
         "impact_freq": "衝突周波数 (Hz)",
+        "solenoid_eff": "ソレノイド効率",
+        # Field Tab
         "field_header": "実環境シミュレーション",
         "sim_params": "シミュレーションパラメータ",
         "sim_duration": "時間 (Hours)",
@@ -113,11 +171,9 @@ TRANSLATIONS = {
         "chart_cum_title": "累積発電量シミュレーション",
         "unit_energy": "mJ",
         "sim_start_btn": "モンテカルロ法を実行",
-        "sim_success": "{n} 個の雨滴データを生成しました。",
-        "solenoid_eff": "ソレノイド効率"
+        "sim_success": "{n} 個の雨滴データを生成しました。"
     }
 }
-
 # ==========================================
 # 2. 物理常數定義區 (Physical Config)
 # ==========================================
@@ -255,30 +311,30 @@ st.sidebar.text(t["dev_credit"])
 # --- Tabs ---
 tab_theory, tab_lab, tab_field = st.tabs([t["tab_theory"], t["tab_lab"], t["tab_field"]])
 
-# ================= TAB 1: 理論架構 (Theory & Logic - V5.1 Updated) =================
+# ================= TAB 1: 理論架構 (Theory & Logic - V5.2 Fixed) =================
 with tab_theory:
     st.header(t["theory_header"])
     st.caption("Governing Equations of the Digital Twin: Bridging Lab & Nature")
     
     st.markdown("---")
 
-    # --- Part 1: 環境物理模型 (Environmental Physics) ---
-    st.subheader("1. Environmental Input Models (Nature's Physics)")
+    # --- Part 1: 環境物理模型 ---
+    st.subheader(t["theory_sec1"])
     col_t1, col_t2 = st.columns(2)
     
     with col_t1:
         st.markdown(f"""
         <div class="theory-box">
-        <h4>Eq. 1: Stochastic Rain (Marshall-Palmer)</h4>
-        <p>Models the random distribution of raindrop sizes in a storm.</p>
+        <h4>{t['eq1_title']}</h4>
+        <p>{t['eq1_desc']}</p>
         </div>
         """, unsafe_allow_html=True)
         st.latex(r"N(D) = N_0 e^{-\Lambda D}")
         
         st.markdown(f"""
         <div class="theory-box">
-        <h4>Eq. 2: Terminal Velocity (Gunn-Kinzer)</h4>
-        <p>Corrects impact momentum for air resistance.</p>
+        <h4>{t['eq2_title']}</h4>
+        <p>{t['eq2_desc']}</p>
         </div>
         """, unsafe_allow_html=True)
         st.latex(r"V_{term}(D) = 9.65 - 10.3 e^{-0.6D}")
@@ -286,54 +342,53 @@ with tab_theory:
     with col_t2:
         st.markdown(f"""
         <div class="theory-box">
-        <h4>Eq. 3: Effective Impact Angle</h4>
-        <p>Vector analysis of wind speed ($V_w$) and rain velocity ($V_t$).</p>
+        <h4>{t['eq3_title']}</h4>
+        <p>{t['eq3_desc']}</p>
         </div>
         """, unsafe_allow_html=True)
         st.latex(r"\theta_{eff} = \arctan\left(\frac{V_{wind}}{V_{term}}\right)")
 
     st.markdown("---")
 
-    # --- Part 2: 系統動力模型 (System Dynamics) ---
-    st.subheader("2. System Dynamics & Constraints (Hardware vs. Nature)")
+    # --- Part 2: 系統動力模型 ---
+    st.subheader(t["theory_sec2"])
     col_t3, col_t4 = st.columns(2)
     
     with col_t3:
         st.markdown(f"""
         <div class="theory-box">
-        <h4>Eq. 4: Piezo-Dynamics & Moment Arm</h4>
-        <p>2nd-order mass-spring-damper system with position scaling.</p>
+        <h4>{t['eq4_title']}</h4>
+        <p>{t['eq4_desc']}</p>
         </div>
         """, unsafe_allow_html=True)
         st.latex(r"m_{eff} \ddot{x} + c \dot{x} + k x = F(t) \cdot \left(\frac{x_{pos}}{L}\right)^2")
 
         st.markdown(f"""
         <div class="theory-box">
-        <h4>Eq. 5: Ghost Damping (Water Film)</h4>
-        <p><b>Nature's Limit:</b> Damping spikes as water film ($h$) accumulates.</p>
+        <h4>{t['eq5_title']}</h4>
+        <p>{t['eq5_desc']}</p>
         </div>
         """, unsafe_allow_html=True)
         st.latex(r"\zeta(t) = \zeta_{dry} + \kappa \cdot h_{film}(t)")
-        st.caption("Explains why high-freq fails in nature ($\zeta \to 0.35$).")
 
     with col_t4:
         st.markdown(f"""
         <div class="theory-box">
-        <h4>Eq. 6: Solenoid Inductance Limit</h4>
-        <p><b>Lab's Limit:</b> Force decays due to magnetic lag at high freq.</p>
+        <h4>{t['eq6_title']}</h4>
+        <p>{t['eq6_desc']}</p>
         </div>
         """, unsafe_allow_html=True)
         st.latex(r"F_{eff}(f) = F_{max} \cdot \left(\frac{33.3}{f}\right)^{1.5}")
-        st.caption("Explains why high-freq fails in the lab ($F \to 0$).")
 
-    # APA References
+    # References (IEEE Standard) - 補齊4篇
     st.markdown("---")
     st.markdown("### 📚 References (IEEE Standard)")
     st.markdown("""
     <div class="citation-box">
-    <p><b>[1]</b> Marshall, J. S., & Palmer, W. M. (1948). The distribution of raindrops with size. <i>Journal of meteorology</i>, <i>5</i>(4), 165-166.</p>
-    <p><b>[2]</b> Gunn, R., & Kinzer, G. D. (1949). The terminal velocity of fall for water droplets in stagnant air. <i>Journal of meteorology</i>, <i>6</i>(4), 243-248.</p>
-    <p><b>[3]</b> Li, S., Crovetto, A., et al. (2016). Bi-resonant structure with piezoelectric PVDF films. <i>Sensors and Actuators A</i>.</p>
+    <p><b>[1]</b> Li, S., Crovetto, A., et al. (2016). Bi-resonant structure with piezoelectric PVDF films. <i>Sensors and Actuators A</i>.</p>
+    <p><b>[2]</b> Bowland, A., & Muriuki, M. (2010). New concepts in modeling damping in structures. <i>10th CCEE</i>.</p>
+    <p><b>[3]</b> Yuk, J., Leem, A., Thomas, K., & Jung, S. (2025). Leaf-inspired rain-energy harvesting device. <i>Cornell University</i>.</p>
+    <p><b>[4]</b> Xu, W., Zheng, H., Liu, Y., et al. (2020). A droplet-based electricity generator with high instantaneous power density. <i>Nature</i>.</p>
     </div>
     """, unsafe_allow_html=True)
 # ================= TAB 2: 物理實驗室 (Core Update) =================
