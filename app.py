@@ -13,7 +13,7 @@ TRANSLATIONS = {
         "sidebar_settings": "Global Settings",
         "target_material": "Target Material",
         "beam_len": "Beam Length L (cm)",
-        "area": "Sensor Area (cm²)",
+        "area": "Sensor Area (cm2)",
         "freq": "Resonance Freq (Hz)",
         "drainage_cost": "Drainage Energy Cost (%)",
         "dev_credit": "Developed for Science Edge 2026",
@@ -31,19 +31,14 @@ TRANSLATIONS = {
         "theory_3_mom": "Moment Arm Effect",
         # Lab Tab
         "lab_ctrl": "Parameter Control",
-        "lab_mode_label": "Analysis Mode Selection",
-        "lab_mode_a": "🔴 A. Damping Comparison (Smart vs Fixed)",
-        "lab_mode_b": "🔵 B. Frequency Truncation Analysis",
-        "lab_env": "A. Environment Settings",
-        "lab_freq_sect": "B. Frequency Settings",
+        "lab_env": "Experiment A: Ghost Damping Effect",
+        "lab_freq_sect": "Experiment B: Frequency Optimization",
         "lab_sweet_spot": "Set to Sweet Spot",
         "lab_monitor": "Physics Monitor",
         "lab_monitor_zeta": "Zeta (Damping)",
-        "lab_monitor_tau": "Relaxation Time",
         "rain_rate": "Rain Rate (mm/hr)",
         "wind_speed": "Wind Speed (m/s)",
         "impact_freq": "Impact Freq (Hz)",
-        "lab_wave_title": "Micro-view: Damped Oscillation",
         # Field Tab
         "field_header": "Real-world Scenario Simulation",
         "sim_params": "Simulation Parameters",
@@ -63,7 +58,7 @@ TRANSLATIONS = {
         "sidebar_settings": "全域參數設定",
         "target_material": "目標材料模型",
         "beam_len": "懸臂樑長度 L (cm)",
-        "area": "感測器有效面積 (cm²)",
+        "area": "感測器有效面積 (cm2)",
         "freq": "裝置共振頻率 (Hz)",
         "drainage_cost": "主動排水耗能係數 (%)",
         "dev_credit": "為 Tsukuba Science Edge 2026 開發",
@@ -81,19 +76,14 @@ TRANSLATIONS = {
         "theory_3_mom": "力臂效應",
         # Lab Tab
         "lab_ctrl": "變因控制實驗",
-        "lab_mode_label": "分析視角選擇",
-        "lab_mode_a": "🔴 A. 排水效益對比 (Smart vs Fixed)",
-        "lab_mode_b": "🔵 B. 頻率截斷分析 (截斷視角)",
-        "lab_env": "A. 環境設定 (Environment)",
-        "lab_freq_sect": "B. 頻率設定 (Frequency)",
+        "lab_env": "實驗 A：水膜阻尼效應 (Ghost Damping)",
+        "lab_freq_sect": "實驗 B：頻率優化 (Frequency Optimization)",
         "lab_sweet_spot": "設定為甜蜜點頻率",
         "lab_monitor": "物理參數監控",
         "lab_monitor_zeta": "阻尼比 (Zeta)",
-        "lab_monitor_tau": "鬆弛時間",
         "rain_rate": "降雨強度 (mm/hr)",
         "wind_speed": "環境風速 (m/s)",
         "impact_freq": "撞擊頻率 (Hz)",
-        "lab_wave_title": "微觀視圖：阻尼震盪波形",
         # Field Tab
         "field_header": "真實情境模擬",
         "sim_params": "模擬參數",
@@ -113,7 +103,7 @@ TRANSLATIONS = {
         "sidebar_settings": "グローバル設定",
         "target_material": "ターゲット材料",
         "beam_len": "カンチレバー長さ L (cm)",
-        "area": "センサー有効面積 (cm²)",
+        "area": "センサー有効面積 (cm2)",
         "freq": "共振周波数 (Hz)",
         "drainage_cost": "排水エネルギーコスト (%)",
         "dev_credit": "Tsukuba Science Edge 2026 向け開発",
@@ -131,19 +121,14 @@ TRANSLATIONS = {
         "theory_3_mom": "モーメントアーム効果",
         # Lab Tab
         "lab_ctrl": "パラメータ制御",
-        "lab_mode_label": "分析モード選択",
-        "lab_mode_a": "🔴 A. 排水効果比較 (Smart vs Fixed)",
-        "lab_mode_b": "🔵 B. 周波数切断分析 (Truncation)",
-        "lab_env": "A. 環境設定",
-        "lab_freq_sect": "B. 周波数設定",
+        "lab_env": "実験 A：水膜減衰効果",
+        "lab_freq_sect": "実験 B：周波数最適化",
         "lab_sweet_spot": "スイートスポット設定",
         "lab_monitor": "物理パラメータ",
         "lab_monitor_zeta": "減衰比 (Zeta)",
-        "lab_monitor_tau": "緩和時間",
         "rain_rate": "降雨強度 (mm/hr)",
         "wind_speed": "風速 (m/s)",
         "impact_freq": "衝突周波数 (Hz)",
-        "lab_wave_title": "ミクロ視点：減衰振動波形",
         # Field Tab
         "field_header": "実環境シミュレーション",
         "sim_params": "シミュレーションパラメータ",
@@ -224,7 +209,7 @@ def rk4_solver(mass_beam, k_spring, dt, total_time, drop_mass, drop_velocity, we
 # ==========================================
 # 4. 主程式 (Main App)
 # ==========================================
-st.set_page_config(page_title="Eco-Rain Digital Twin", page_icon="⛈️", layout="wide")
+st.set_page_config(page_title="Eco-Rain Digital Twin", layout="wide")
 
 # --- CSS (Dark Mode Safe) ---
 st.markdown("""
@@ -240,7 +225,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- 語言選擇 (Language Selector) ---
-st.sidebar.markdown("### 🌐 Language / 語言 / 言語")
+st.sidebar.markdown("### Language / 語言 / 言語")
 selected_lang = st.sidebar.selectbox("Select Language", ["English", "繁體中文", "日本語"], label_visibility="collapsed")
 t = TRANSLATIONS[selected_lang] 
 
@@ -251,7 +236,7 @@ class PhysicsEngine:
         self.length = length
 
     def get_params(self, rain, wind, mode="Fixed", freq_override=None):
-        if rain <= 0: return 0, 0.04, 0, 0, 0, 0, 1.0, 0.0 # 這裡也同步更新基礎阻尼
+        if rain <= 0: return 0, 0.04, 0, 0, 0, 0, 1.0, 0.0 
         D0 = 0.9 * (rain ** 0.21) 
         V_term = 3.778 * (D0 ** 0.67) 
         if freq_override is not None:
@@ -281,7 +266,6 @@ st.caption("Physics-Informed Digital Twin Platform")
 st.sidebar.markdown(f"### {t['sidebar_settings']}")
 st.sidebar.markdown(f"**{t['target_material']}:**")
 st.sidebar.info("TE Connectivity LDT0-028K (PVDF)")
-st.sidebar.error("DEBUG: 版本 V3.3 (論文甜蜜點校正版)") 
 
 param_beam_len = st.sidebar.number_input(t["beam_len"], 3.0, 10.0, 5.0, step=0.5)
 param_area = st.sidebar.number_input(t["area"], 0.5, 10.0, 2.5, format="%.1f")
@@ -337,7 +321,7 @@ with tab_theory:
 
     # APA References (Standard Numbered)
     st.markdown("---")
-    st.markdown("### 📚 References (IEEE Standard)")
+    st.markdown("### References (IEEE Standard)")
     st.markdown("""
     <div class="citation-box">
     <p><b>[1]</b> Marshall, J. S., & Palmer, W. M. (1948). The distribution of raindrops with size. <i>Journal of meteorology</i>, <i>5</i>(4), 165-166.</p>
@@ -348,126 +332,127 @@ with tab_theory:
     </div>
     """, unsafe_allow_html=True)
 
-# ================= TAB 2: 物理機制探討 (Lab / Theory Verification) =================
+# ================= TAB 2: 物理機制探討 (Independent Physics Labs) =================
 with tab_lab:
     st.markdown(f"#### {t['lab_ctrl']}")
-    st.caption("Digital Twin Mode: Physics Verification.")
+    st.caption("Here we conduct two independent experiments to isolate physical variables.")
     
-    col_ctrl, col_viz = st.columns([1, 2])
-    with col_ctrl:
-        # --- 分析模式選擇 ---
-        st.markdown(f"##### 🛠️ {t['lab_mode_label']}")
-        analysis_mode = st.radio(
-            "Mode:",
-            (t['lab_mode_a'], t['lab_mode_b']),
-            index=0
-        )
-        st.markdown("---")
+    st.markdown("---")
 
-        # --- A. 環境設定 ---
-        st.markdown(f"##### {t['lab_env']}")
-        val_rain = st.slider(f"{t['rain_rate']}", 0, 150, 50, key="lab_rain")
+    # =========================================================
+    # 實驗 A: 水膜阻尼效應 (Ghost Damping)
+    # 變因：降雨率 (Rain Rate) | 固定：頻率 (5 Hz - 慢速以利觀察)
+    # =========================================================
+    st.markdown(f"##### {t['lab_env']}")
+    
+    col_a1, col_a2 = st.columns([1, 2])
+    with col_a1:
+        # [控制區 A] 只調整雨量
+        val_rain_a = st.slider(f"{t['rain_rate']}", 0, 150, 150, key="exp_a_rain") # 預設最大以顯示失效
         
-        _, z_f, eff_f, tau_f, wd, _, _, _ = engine.get_params(val_rain, 0, "Fixed")
-        _, z_s, eff_s, tau_s, _, _, _, _  = engine.get_params(val_rain, 0, "Smart")
-
-        # [校正點 3] 鎖定論文數值 (Hardcoded Paper Value)
-        # 雖然 tau 還是會算出來給物理監控看，但建議值鎖定為 33.3
-        optimal_freq = 33.3 
+        # 固定頻率為 5Hz，確保波形看得很清楚
+        FIXED_FREQ_A = 5 
         
-        # 根據模式顯示資訊
-        if t['lab_mode_a'] in analysis_mode: # Mode A
-            st.info(f"""
-            **{t['lab_monitor']}:**
-            * **Fixed {t['lab_monitor_zeta']}:** `{z_f:.4f}`
-            * **Smart {t['lab_monitor_zeta']}:** `{z_s:.4f}`
-            """)
-        else: # Mode B
-            st.info(f"""
-            **{t['lab_monitor']}:**
-            * **{t['lab_monitor_tau']}:** `{tau_s*1000:.1f} ms`
-            * **Paper Sweet Spot:** `{optimal_freq:.1f} Hz`
-            """)
-
-        st.markdown("---")
-
-        # --- B. 頻率設定 ---
-        st.markdown(f"##### {t['lab_freq_sect']}")
+        # 計算參數
+        _, z_f, eff_f, _, wd, _, _, _ = engine.get_params(val_rain_a, 0, "Fixed", freq_override=FIXED_FREQ_A)
+        _, z_s, eff_s, _, _, _, _, _  = engine.get_params(val_rain_a, 0, "Smart", freq_override=FIXED_FREQ_A)
         
-        # 只在B模式顯示甜蜜點按鈕
-        if t['lab_mode_b'] in analysis_mode:
-            if st.button(f"{t['lab_sweet_spot']} ({optimal_freq:.1f} Hz)"):
-                st.session_state['lab_freq_val'] = int(optimal_freq)
+        st.info(f"""
+        **Comparison:**
+        * **Fixed Zeta (Red):** `{z_f:.4f}`
+        * **Smart Zeta (Green):** `{z_s:.4f}`
+        * *Frequency fixed at 5 Hz for visibility.*
+        """)
+
+    with col_a2:
+        # [繪圖區 A] 紅綠對決
+        VIEW_WINDOW_A = 0.2
+        t_arr = np.linspace(0, VIEW_WINDOW_A, 2000)
         
-        if 'lab_freq_val' not in st.session_state: st.session_state['lab_freq_val'] = 30
-        val_freq = st.slider(f"{t['impact_freq']}", 5, 120, 
-                             value=st.session_state['lab_freq_val'], key="lab_freq_slider")
-        st.session_state['lab_freq_val'] = val_freq
-
-        # --- 狀態判斷 (只在B模式顯示) ---
-        if t['lab_mode_b'] in analysis_mode:
-            T_impact = 1 / val_freq
-            # 計算與 33.3 Hz 的偏差度來顯示狀態
-            deviation = abs(val_freq - optimal_freq)
-            
-            if deviation < 5.0:
-                status_color, status_text = "#fbc02d", "SWEET SPOT (Optimal)"
-            elif val_freq > optimal_freq:
-                status_color, status_text = "#d32f2f", "Waveform Truncated (Too Fast)"
-            else:
-                status_color, status_text = "#1976d2", "Interval Too Long (Too Slow)"
-            
-            st.markdown(f"""<div style="padding:10px; border-left:5px solid {status_color}; background:{status_color}10;"><b>Status:</b> {status_text}</div>""", unsafe_allow_html=True)
-
-    with col_viz:
-        st.subheader(t["lab_wave_title"])
-        fig = go.Figure()
-
-        if t['lab_mode_a'] in analysis_mode:
-            # === 模式 A: 紅綠對決 (排水對比) ===
-            VIEW_WINDOW = 0.2 
-            t_arr = np.linspace(0, VIEW_WINDOW, 2000)
-            T_cycle = 1 / val_freq
-            time_in_cycle = t_arr % T_cycle
-            
-            wave_f = (1.0 * eff_f) * np.exp(-z_f * 2 * np.pi * param_fn * time_in_cycle) * np.sin(wd * time_in_cycle)
-            wave_s = (1.0 * eff_s) * np.exp(-z_s * 2 * np.pi * param_fn * time_in_cycle) * np.sin(wd * time_in_cycle)
-            
-            fig.add_trace(go.Scatter(x=t_arr*1000, y=wave_s, mode='lines', name='Smart (Active)', line=dict(color='#2e7d32', width=3)))
-            fig.add_trace(go.Scatter(x=t_arr*1000, y=wave_f, mode='lines', name='Fixed (Passive)', line=dict(color='#c62828', width=2, dash='dot')))
-            title_text = f"Damping Comparison (Rain: {val_rain} mm/hr)"
-            x_range = [0, 150]
-
-        else:
-            # === 模式 B: 頻率截斷 (幽靈波形) ===
-            VIEW_WINDOW = 0.06 
-            t_arr = np.linspace(0, VIEW_WINDOW, 2000)
-            T_cycle = 1 / val_freq
-            time_in_cycle = t_arr % T_cycle
-            
-            wave_s = (1.0 * eff_s) * np.exp(-z_s * 2 * np.pi * param_fn * time_in_cycle) * np.sin(wd * time_in_cycle)
-            # 幽靈波形 (理想完整衰減)
-            wave_ghost = (1.0 * eff_s) * np.exp(-z_s * 2 * np.pi * param_fn * t_arr) * np.sin(wd * t_arr)
-            
-            fig.add_trace(go.Scatter(x=t_arr*1000, y=wave_ghost, mode='lines', name='Ideal Decay (Potential)', line=dict(color='gray', width=2, dash='dot'), opacity=0.5))
-            fig.add_trace(go.Scatter(x=t_arr*1000, y=wave_s, mode='lines', name='Actual Response', line=dict(color='#2e7d32', width=3)))
-            
-            fig.add_vline(x=T_cycle*1000, line_dash="solid", line_color="white", opacity=0.5, annotation_text="Truncation ⚡", annotation_position="top left")
-            title_text = f"Frequency Analysis @ {val_freq} Hz"
-            x_range = [0, 50]
-
-        fig.update_layout(
-            title=title_text,
-            xaxis_title="Time (ms)", 
-            yaxis_title="Voltage (V)", 
-            height=450, 
+        # 產生 5Hz 的波形
+        wave_f = (1.0 * eff_f) * np.exp(-z_f * 2 * np.pi * param_fn * t_arr) * np.sin(wd * t_arr)
+        wave_s = (1.0 * eff_s) * np.exp(-z_s * 2 * np.pi * param_fn * t_arr) * np.sin(wd * t_arr)
+        
+        fig_a = go.Figure()
+        fig_a.add_trace(go.Scatter(x=t_arr*1000, y=wave_s, mode='lines', name='Smart (Active)', line=dict(color='#2e7d32', width=3)))
+        fig_a.add_trace(go.Scatter(x=t_arr*1000, y=wave_f, mode='lines', name='Fixed (Passive)', line=dict(color='#c62828', width=2, dash='dot')))
+        
+        fig_a.update_layout(
+            title=f"Fig 2: Failure Mode Analysis (Rain: {val_rain_a} mm/hr)",
+            xaxis_title="Time (ms)", yaxis_title="Voltage (V)", height=350,
             margin=dict(l=20, r=20, t=40, b=20),
-            xaxis=dict(range=x_range, showgrid=True),
-            yaxis=dict(range=[-1.2, 1.2]),
-            showlegend=True,
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+            xaxis=dict(range=[0, 150]), yaxis=dict(range=[-1.2, 1.2])
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig_a, use_container_width=True)
+
+    st.markdown("---")
+
+    # =========================================================
+    # 實驗 B: 頻率截斷效應 (Frequency Truncation)
+    # 變因：撞擊頻率 (Freq) | 固定：降雨率 (50 mm/hr - 中等以利震盪)
+    # =========================================================
+    st.markdown(f"##### {t['lab_freq_sect']}")
+    
+    col_b1, col_b2 = st.columns([1, 2])
+    with col_b1:
+        # [控制區 B] 只調整頻率
+        # 鎖定論文甜蜜點
+        optimal_freq = 33.3
+        
+        # 甜蜜點按鈕
+        if st.button(f"{t['lab_sweet_spot']} ({optimal_freq:.1f} Hz)", key="btn_sweet"):
+            st.session_state['exp_b_freq'] = int(optimal_freq)
+        
+        if 'exp_b_freq' not in st.session_state: st.session_state['exp_b_freq'] = 30
+        val_freq_b = st.slider(f"{t['impact_freq']}", 5, 120, 
+                             value=st.session_state['exp_b_freq'], key="exp_b_slider")
+        st.session_state['exp_b_freq'] = val_freq_b
+
+        # 固定雨量為 50，確保有足夠的震盪來觀察截斷
+        FIXED_RAIN_B = 50 
+        
+        # 計算參數 (只關心 Smart 系統的表現)
+        _, z_s, eff_s, tau_s, wd, _, _, _ = engine.get_params(FIXED_RAIN_B, 0, "Smart")
+        
+        # 狀態判定
+        T_impact = 1 / val_freq_b
+        deviation = abs(val_freq_b - optimal_freq)
+        if deviation < 5.0:
+            status_color, status_text = "#fbc02d", "SWEET SPOT"
+        elif val_freq_b > optimal_freq:
+            status_color, status_text = "#d32f2f", "Truncated (Too Fast)"
+        else:
+            status_color, status_text = "#1976d2", "Inefficient (Too Slow)"
+            
+        st.markdown(f"""<div style="padding:10px; border-left:5px solid {status_color}; background:{status_color}10;"><b>Status:</b> {status_text}</div>""", unsafe_allow_html=True)
+        st.caption("*Rain Rate fixed at 50 mm/hr.*")
+
+    with col_b2:
+        # [繪圖區 B] 綠線 vs 幽靈線
+        VIEW_WINDOW_B = 0.06 # 微觀視角
+        t_arr_b = np.linspace(0, VIEW_WINDOW_B, 2000)
+        T_cycle = 1 / val_freq_b
+        time_in_cycle = t_arr_b % T_cycle
+        
+        # 實際波形 (被切斷)
+        wave_actual = (1.0 * eff_s) * np.exp(-z_s * 2 * np.pi * param_fn * time_in_cycle) * np.sin(wd * time_in_cycle)
+        # 幽靈波形 (理想完整衰減)
+        wave_ghost = (1.0 * eff_s) * np.exp(-z_s * 2 * np.pi * param_fn * t_arr_b) * np.sin(wd * t_arr_b)
+        
+        fig_b = go.Figure()
+        fig_b.add_trace(go.Scatter(x=t_arr_b*1000, y=wave_ghost, mode='lines', name='Ideal Potential', line=dict(color='gray', width=2, dash='dot'), opacity=0.5))
+        fig_b.add_trace(go.Scatter(x=t_arr_b*1000, y=wave_actual, mode='lines', name='Actual Response', line=dict(color='#2e7d32', width=3)))
+        
+        # 標示切斷點
+        fig_b.add_vline(x=T_cycle*1000, line_dash="solid", line_color="white", opacity=0.5, annotation_text="Reset", annotation_position="top left")
+        
+        fig_b.update_layout(
+            title=f"Fig 3: Frequency Analysis @ {val_freq_b} Hz",
+            xaxis_title="Time (ms)", yaxis_title="Voltage (V)", height=350,
+            margin=dict(l=20, r=20, t=40, b=20),
+            xaxis=dict(range=[0, 50]), yaxis=dict(range=[-1.2, 1.2])
+        )
+        st.plotly_chart(fig_b, use_container_width=True)
 
 # ================= TAB 3: 場域模擬 (Field Simulation / Monte Carlo) =================
 with tab_field:
