@@ -330,62 +330,143 @@ with tab_theory:
     </div>
     """, unsafe_allow_html=True)
 
-# ================= TAB 2: 實驗室 =================
+這份程式碼已經完全移除了所有的 Emoji，並且將 Tab 2 (物理實驗室/理論驗證) 與 Tab 3 (場域模擬/蒙地卡羅) 整合在一起。
+
+請將您程式碼中 with tab_lab: 開始的部分，直到最後，全部替換為以下內容：
+
+Python
+
+# ================= TAB 2: 物理機制探討 (Pure Theory / Lab) =================
 with tab_lab:
-    st.markdown(f"#### {t['lab_ctrl']}")
+    st.markdown(f"#### {t['lab_ctrl']} (Theoretical Verification)")
+    st.caption("在此模式下，我們固定變因來尋找「能量甜蜜點 (Energy Sweet Spot)」。")
+    
     col_ctrl, col_viz = st.columns([1, 2])
     with col_ctrl:
-        val_rain = st.slider(f"1. {t['rain_rate']}", 0, 150, 50)
-        val_wind = st.slider(f"2. {t['wind_speed']}", 0.0, 30.0, 5.0)
-        val_freq = st.slider(f"3. {t['impact_freq']}", 5, 120, 30)
-
-        _, z_f, eff_f, tau_f, wd, _, _, _ = engine.get_params(val_rain, val_wind, "Fixed", freq_override=val_freq)
-        _, z_s, eff_s, tau_s, _, _, _, _  = engine.get_params(val_rain, val_wind, "Smart", freq_override=val_freq)
+        # --- A. 環境設定 ---
+        st.markdown("##### A. 環境設定 (Environment)")
+        # 預設把雨量調到 50 (中等雨量)
+        val_rain = st.slider(f"{t['rain_rate']}", 0, 150, 50, key="lab_rain")
         
-        time_window = 3 * tau_f * 1000 
-        impact_period = 1000 / val_freq 
-        is_truncated = impact_period < time_window
-        status_color = "#d32f2f" if is_truncated else "#2e7d32"
-        status_text = t['status_trunc'] if is_truncated else t['status_full']
+        _, z_f, eff_f, tau_f, wd, _, _, _ = engine.get_params(val_rain, 0, "Fixed")
+        _, z_s, eff_s, tau_s, _, _, _, _  = engine.get_params(val_rain, 0, "Smart")
+
+        # 計算理論上的最佳頻率 (讓週期 T 剛好等於 3 倍時間常數)
+        optimal_period = tau_s * 3 
+        optimal_freq = 1 / optimal_period if optimal_period > 0 else 30
+        
+        st.info(f"""
+        **物理參數:**
+        * **Smart Zeta:** `{z_s:.4f}`
+        * **Relaxation Time (tau):** `{tau_s*1000:.1f} ms`
+        * **理論最佳頻率:** `{optimal_freq:.1f} Hz`
+        """)
+
+        st.markdown("---")
+
+        # --- B. 頻率與甜蜜點設定 ---
+        st.markdown("##### B. 頻率優化 (Frequency Optimization)")
+        
+        # [功能] 一鍵設定到甜蜜點按鈕 (無 Emoji)
+        if st.button(f"Set to Sweet Spot ({optimal_freq:.1f} Hz)"):
+            st.session_state['lab_freq_val'] = int(optimal_freq)
+        
+        # 頻率滑桿
+        if 'lab_freq_val' not in st.session_state: st.session_state['lab_freq_val'] = 30
+        
+        val_freq = st.slider(f"{t['impact_freq']}", 5, 120, 
+                             value=st.session_state['lab_freq_val'], key="lab_freq_slider")
+        st.session_state['lab_freq_val'] = val_freq
+
+        # --- 狀態判斷邏輯 ---
+        T_impact = 1 / val_freq
+        ratio = T_impact / tau_s
+        
+        if ratio < 2.0:
+            status_color = "#d32f2f" # 紅色
+            status_text = "Waveform Truncated"
+            status_desc = "撞擊太快，能量未釋放完即被切斷。"
+        elif 2.0 <= ratio <= 4.0:
+            status_color = "#fbc02d" # 金色 (甜蜜點)
+            status_text = "SWEET SPOT (Optimal)"
+            status_desc = "完美匹配！週期 T 接近 3tau，能量最大化。"
+        else:
+            status_color = "#1976d2" # 藍色
+            status_text = "Interval Too Long (Inefficient)"
+            status_desc = "雖然波形完整，但撞擊密度太低，總功率低。"
         
         st.markdown(f"""
-        <div class="metric-card">
-            <h4>{t['lab_analysis']}</h4>
-            <p><b>Zeta:</b> <span style="color:#d32f2f">{z_f:.4f} (Fixed)</span> vs <span style="color:#2e7d32">{z_s:.4f} (Smart)</span></p>
-            <p><b>Relaxation:</b> {time_window:.1f} ms</p>
-            <p class="status-text" style="color:{status_color};">{status_text}</p>
+        <div style="padding:15px; border:2px solid {status_color}; background-color: {status_color}10; border-radius:8px;">
+            <h4 style="margin:0; color:{status_color};">{status_text}</h4>
+            <small style="color:#333;">{status_desc}</small>
         </div>
         """, unsafe_allow_html=True)
 
     with col_viz:
         st.subheader(t["lab_wave_title"])
-        t_arr = np.linspace(0, 0.15, 1000) 
-        T_impact = 1 / val_freq
-        amp_f = 1.0 * eff_f
-        wave_f = amp_f * np.exp(-z_f * 2 * np.pi * param_fn * t_arr) * np.sin(wd * t_arr)
-        wave_s = 1.0 * eff_s * np.exp(-z_s * 2 * np.pi * param_fn * t_arr) * np.sin(wd * t_arr)
-        mask = t_arr <= T_impact
         
+        # --- 繪圖設定 ---
+        VIEW_WINDOW = 0.2 # 固定視窗 200ms
+        t_arr = np.linspace(0, VIEW_WINDOW, 2000) 
+        T_cycle = 1 / val_freq 
+        
+        # 模擬連續波形
+        time_in_cycle = t_arr % T_cycle
+        
+        # 只畫 Smart System (綠線)，因為這是我們探討頻率優化的主角
+        wave_s = (1.0 * eff_s) * np.exp(-z_s * 2 * np.pi * param_fn * time_in_cycle) * \
+                 np.sin(wd * time_in_cycle)
+        
+        # 為了比較，也畫出紅線 (Fixed)，證明在大雨下它會死掉
+        # 使用相同的 time_in_cycle 來模擬連續撞擊
+        wave_f = (1.0 * eff_f) * np.exp(-z_f * 2 * np.pi * param_fn * time_in_cycle) * \
+                 np.sin(wd * time_in_cycle)
+
         fig = go.Figure()
-        fig.add_trace(go.Scatter(x=t_arr[mask]*1000, y=wave_s[mask], mode='lines', name='Smart', line=dict(color='#2e7d32', width=3)))
-        fig.add_trace(go.Scatter(x=t_arr[mask]*1000, y=wave_f[mask], mode='lines', name='Fixed', line=dict(color='#c62828', width=3)))
-        fig.add_vline(x=T_impact*1000, line_dash="dash", line_color="black")
-        fig.update_layout(xaxis_title="Time (ms)", yaxis_title="Voltage (V)", height=400, margin=dict(l=20, r=20, t=30, b=20))
+        
+        # 畫波形 (Smart)
+        fig.add_trace(go.Scatter(x=t_arr*1000, y=wave_s, mode='lines', name='Smart (Active Drainage)', 
+                                line=dict(color='#2e7d32', width=3)))
+        
+        # 畫波形 (Fixed) - 讓使用者能看到失效對比
+        fig.add_trace(go.Scatter(x=t_arr*1000, y=wave_f, mode='lines', name='Fixed (Passive)', 
+                                line=dict(color='#c62828', width=2, dash='dot')))
+        
+        # 畫垂直虛線標示撞擊點
+        for i in range(1, int(VIEW_WINDOW/T_cycle) + 1):
+            fig.add_vline(x=i*T_cycle*1000, line_dash="solid", line_color="gray", opacity=0.2)
+            
+        fig.update_layout(
+            title=f"Frequency Response Analysis @ {val_freq} Hz",
+            xaxis_title="Time (ms)", 
+            yaxis_title="Voltage (V)", 
+            height=450, 
+            margin=dict(l=20, r=20, t=40, b=20),
+            xaxis=dict(range=[0, 150], showgrid=True), 
+            yaxis=dict(range=[-1.2, 1.2]),
+            showlegend=True
+        )
         st.plotly_chart(fig, use_container_width=True)
 
-# ================= TAB 3: 場域模擬 =================
+# ================= TAB 3: 場域模擬 (Field Simulation / Monte Carlo) =================
 with tab_field:
     st.markdown(f"#### {t['field_header']}")
+    
+    # --- 1. 時間序列模擬 (Time-Series Simulation) ---
+    st.markdown("##### 1. Long-term Rainfall Simulation")
     col_input, col_sim = st.columns([1, 3])
     
     with col_input:
         st.subheader(t["sim_params"])
         sim_duration = st.slider(t["sim_duration"], 1, 24, 12)
+        
+        # 生成模擬氣象數據
         h = np.arange(0, sim_duration + 1, 1) 
         peak_time = sim_duration / 2
         r = 10 + 100 * np.exp(-0.5 * (h - peak_time)**2/2.5) 
         w = 5 + 25 * np.exp(-0.5 * (h - peak_time)**2/3) + np.random.normal(0, 2, len(h))
         df = pd.DataFrame({'Time': h, 'Rain': np.clip(r, 0, None), 'Wind': np.clip(w, 0, None)})
+        
         with st.expander(t["view_weather"]):
             st.dataframe(df, height=150)
 
@@ -396,11 +477,15 @@ with tab_field:
         
         for idx, row in df.iterrows():
             R, W = row['Rain'], row['Wind']
+            # Smart System
             f_s, z_s, eff_s, tau_s, _, _, pos_s, loc_s = engine.get_params(R, W, "Smart")
             trunc_s = 1 / (1 + PhysConfig.TRUNCATION_SHAPE_FACTOR * f_s * tau_s) 
+            
+            # Fixed System
             f_f, z_f, eff_f, tau_f, _, _, pos_f, loc_f = engine.get_params(R, W, "Fixed")
             trunc_f = 1 / (1 + PhysConfig.TRUNCATION_SHAPE_FACTOR * f_f * tau_f)
             
+            # 能量計算
             energy_s_raw = f_s * (eff_s**2) * trunc_s * (R**0.5) * pos_s * PhysConfig.BASE_POWER_FACTOR
             drainage_loss = energy_s_raw * (drainage_cost_pct / 100.0)
             energy_s_net = energy_s_raw - drainage_loss
@@ -429,18 +514,40 @@ with tab_field:
         fig2.update_layout(title=t["chart_cum_title"], yaxis_title=f"Total Energy ({t['unit_energy']})", height=350, margin=dict(l=0,r=0,t=30,b=0))
         st.plotly_chart(fig2, use_container_width=True)
         
-        st.markdown(f"**{t['chart_pos_title']}** - L={param_beam_len}cm")
-        fig_heat = go.Figure()
-        fig_heat.add_trace(go.Scatter(
-            x=df['Time'], y=loc_history,
-            mode='markers',
-            marker=dict(size=8, color=eff_history, colorscale='Viridis', showscale=True, colorbar=dict(title="Efficiency")),
-            name='Impact'
-        ))
-        fig_heat.add_hline(y=param_beam_len, line_dash="dash", line_color="gray", annotation_text="Tip")
-        fig_heat.update_layout(yaxis_title="Position (cm)", height=300, margin=dict(l=0,r=0,t=10,b=0))
-        st.plotly_chart(fig_heat, use_container_width=True)
+    st.markdown("---")
 
+    # --- 2. 蒙地卡羅驗證 (Monte Carlo Verification) ---
+    st.markdown("##### 2. Monte Carlo Stochastic Validation")
+    st.caption("利用 Marshall-Palmer 分佈生成隨機雨滴，驗證系統在非理想條件下的魯棒性。")
+    
+    col_ui1, col_ui2 = st.columns(2)
+    mc_rain = col_ui1.slider(f"{t['rain_rate']} (Monte Carlo)", 10, 100, 50)
+    mc_wet = col_ui2.slider("Wetness Factor (0=Dry, 1=Sat)", 0.0, 1.0, 0.1)
+
+    if st.button(t["sim_start_btn"]):
+        masses, velocities = generate_storm_profile(n_drops=1000, rain_rate_mmph=mc_rain)
+        st.success(t["sim_success"].format(n=len(masses)))
+        
+        c1, c2 = st.columns(2)
+        with c1:
+            # 雨滴分佈圖
+            fig_mc1, ax = plt.subplots(figsize=(5, 4))
+            ax.hist(velocities, bins=25, color='#4A90E2', alpha=0.7)
+            ax.set_xlabel("Velocity (m/s)")
+            ax.set_ylabel("Count")
+            ax.set_title("Raindrop Velocity Distribution")
+            st.pyplot(fig_mc1)
+            
+        with c2:
+            # 單顆隨機雨滴響應
+            idx = np.random.randint(0, len(masses))
+            t_rk, v_rk = rk4_solver(0.005, 150, 0.0001, 0.1, masses[idx], velocities[idx], mc_wet)
+            fig_mc2, ax2 = plt.subplots(figsize=(5, 4))
+            ax2.plot(t_rk*1000, v_rk, color='#FF6B6B')
+            ax2.set_xlabel("Time (ms)")
+            ax2.set_ylabel("Voltage (V)")
+            ax2.set_title(f"Single Stochastic Drop Response")
+            st.pyplot(fig_mc2)
 # --- Monte Carlo ---
 st.markdown("---")
 st.header("Monte Carlo Verification")
@@ -467,5 +574,6 @@ if st.button(t["sim_start_btn"]):
         ax2.set_xlabel("Time (ms)")
         ax2.set_title(f"Single Drop Response")
         st.pyplot(fig2)
+
 
 
