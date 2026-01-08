@@ -149,7 +149,7 @@ class PhysConfig:
     PIEZO_SENSITIVITY_V_PM = 50000.0  
     IMPACT_DURATION_SEC = 0.002       
     DAMPING_RATIO_DRY = 0.008         
-    DAMPING_COEFF_WET = 0.035
+    DAMPING_COEFF_WET = 0.35
     SATURATION_RAIN_RATE = 120.0      
     SMART_SYSTEM_WETNESS_RATIO = 0.2  
     BASE_POWER_FACTOR = 0.5           
@@ -467,4 +467,5 @@ if st.button(t["sim_start_btn"]):
         ax2.set_xlabel("Time (ms)")
         ax2.set_title(f"Single Drop Response")
         st.pyplot(fig2)
+
 
