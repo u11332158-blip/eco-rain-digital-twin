@@ -545,35 +545,8 @@ with tab_field:
             fig_mc2, ax2 = plt.subplots(figsize=(5, 4))
             ax2.plot(t_rk*1000, v_rk, color='#FF6B6B')
             ax2.set_xlabel("Time (ms)")
-            ax2.set_ylabel("Voltage (V)")
-            ax2.set_title(f"Single Stochastic Drop Response")
-            st.pyplot(fig_mc2)
-# --- Monte Carlo ---
-st.markdown("---")
-st.header("Monte Carlo Verification")
-col_ui1, col_ui2 = st.columns(2)
-mc_rain = col_ui1.slider(f"{t['rain_rate']}", 10, 100, 50)
-mc_wet = col_ui2.slider("Wetness Factor", 0.0, 1.0, 0.1)
+            ax2.set_
 
-if st.button(t["sim_start_btn"]):
-    masses, velocities = generate_storm_profile(n_drops=1000, rain_rate_mmph=mc_rain)
-    st.success(t["sim_success"].format(n=len(masses)))
-    
-    c1, c2 = st.columns(2)
-    with c1:
-        fig, ax = plt.subplots(figsize=(5, 4))
-        ax.hist(velocities, bins=25, color='#4A90E2', alpha=0.7)
-        ax.set_xlabel("Velocity (m/s)")
-        ax.set_title("Distribution Check")
-        st.pyplot(fig)
-    with c2:
-        idx = np.random.randint(0, len(masses))
-        t_rk, v_rk = rk4_solver(0.005, 150, 0.0001, 0.1, masses[idx], velocities[idx], mc_wet)
-        fig2, ax2 = plt.subplots(figsize=(5, 4))
-        ax2.plot(t_rk*1000, v_rk, color='#FF6B6B')
-        ax2.set_xlabel("Time (ms)")
-        ax2.set_title(f"Single Drop Response")
-        st.pyplot(fig2)
 
 
 
