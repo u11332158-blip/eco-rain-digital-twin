@@ -399,46 +399,68 @@ with tab_lab:
     with col_viz:
         st.subheader(t["lab_wave_title"])
         
-        # --- 繪圖設定 ---
-        VIEW_WINDOW = 0.2 # 固定視窗 200ms
+        # --- [修正重點 1] 縮短觀察視窗，專注於「微觀截斷」 ---
+        # 原本看 150ms 太長了，120Hz 會糊成一團
+        # 我們只看 2 個週期的時間，或者固定 50ms，讓截斷效果超明顯
+        VIEW_WINDOW = 0.06 # 只看 60ms
         t_arr = np.linspace(0, VIEW_WINDOW, 2000) 
         T_cycle = 1 / val_freq 
         
-        # 模擬連續波形
+        # 模擬連續波形 (Actual Response)
         time_in_cycle = t_arr % T_cycle
-        
-        # 只畫 Smart System (綠線)，因為這是我們探討頻率優化的主角
         wave_s = (1.0 * eff_s) * np.exp(-z_s * 2 * np.pi * param_fn * time_in_cycle) * \
                  np.sin(wd * time_in_cycle)
         
-        # 為了比較，也畫出紅線 (Fixed)，證明在大雨下它會死掉
-        # 使用相同的 time_in_cycle 來模擬連續撞擊
-        wave_f = (1.0 * eff_f) * np.exp(-z_f * 2 * np.pi * param_fn * time_in_cycle) * \
-                 np.sin(wd * time_in_cycle)
+        # --- [修正重點 2] 建立「幽靈波形 (Ideal/Ghost Wave)」 ---
+        # 這是「如果沒有下一滴雨，第一滴雨原本可以跑出的完整波形」
+        # 用來對比出 "Wasted Potential" (浪費掉的潛力)
+        # 我們只畫第一波的完整衰減
+        t_ghost = t_arr 
+        wave_ghost = (1.0 * eff_s) * np.exp(-z_s * 2 * np.pi * param_fn * t_ghost) * \
+                     np.sin(wd * t_ghost)
+        # 讓 Ghost 只在第一個週期後出現 (作為對比)
+        wave_ghost_visible = np.where(t_arr > T_cycle, wave_ghost, np.nan)
 
         fig = go.Figure()
         
-        # 畫波形 (Smart)
-        fig.add_trace(go.Scatter(x=t_arr*1000, y=wave_s, mode='lines', name='Smart (Active Drainage)', 
-                                line=dict(color='#2e7d32', width=3)))
+        # 1. 畫出「幽靈波形」 (原本該有，但被切掉的能量)
+        fig.add_trace(go.Scatter(
+            x=t_arr*1000, y=wave_ghost, 
+            mode='lines', name='Wasted Potential (Ideal Decay)', 
+            line=dict(color='gray', width=2, dash='dot'),
+            opacity=0.5
+        ))
         
-        # 畫波形 (Fixed) - 讓使用者能看到失效對比
-        fig.add_trace(go.Scatter(x=t_arr*1000, y=wave_f, mode='lines', name='Fixed (Passive)', 
-                                line=dict(color='#c62828', width=2, dash='dot')))
+        # 2. 畫出「實際波形」 (Smart)
+        fig.add_trace(go.Scatter(
+            x=t_arr*1000, y=wave_s, 
+            mode='lines', name='Actual Response (Truncated)', 
+            line=dict(color='#2e7d32', width=3)
+        ))
         
-        # 畫垂直虛線標示撞擊點
+        # 3. 視覺輔助線 (切斷點)
         for i in range(1, int(VIEW_WINDOW/T_cycle) + 1):
-            fig.add_vline(x=i*T_cycle*1000, line_dash="solid", line_color="gray", opacity=0.2)
+            fig.add_vline(x=i*T_cycle*1000, line_dash="solid", line_color="white", opacity=0.3)
             
+            # 在第一刀切斷的地方加上註解
+            if i == 1:
+                fig.add_annotation(
+                    x=i*T_cycle*1000, y=0.5,
+                    text="Truncation Point ⚡",
+                    showarrow=True, arrowhead=1, ax=20, ay=-30,
+                    font=dict(color="yellow")
+                )
+
         fig.update_layout(
-            title=f"Frequency Response Analysis @ {val_freq} Hz",
+            title=f"Micro-View Analysis @ {val_freq} Hz",
             xaxis_title="Time (ms)", 
             yaxis_title="Voltage (V)", 
             height=450, 
             margin=dict(l=20, r=20, t=40, b=20),
-            xaxis=dict(range=[0, 150], showgrid=True), 
+            xaxis=dict(range=[0, 50], showgrid=True), # 固定 X 軸在微觀尺度
             yaxis=dict(range=[-1.2, 1.2]),
-            showlegend=True
+            showlegend=True,
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
         )
         st.plotly_chart(fig, use_container_width=True)
 
@@ -540,6 +562,7 @@ with tab_field:
             ax2.plot(t_rk*1000, v_rk, color='#FF6B6B')
             ax2.set_xlabel("Time (ms)")
             ax2.set_
+
 
 
 
