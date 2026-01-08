@@ -330,12 +330,6 @@ with tab_theory:
     </div>
     """, unsafe_allow_html=True)
 
-這份程式碼已經完全移除了所有的 Emoji，並且將 Tab 2 (物理實驗室/理論驗證) 與 Tab 3 (場域模擬/蒙地卡羅) 整合在一起。
-
-請將您程式碼中 with tab_lab: 開始的部分，直到最後，全部替換為以下內容：
-
-Python
-
 # ================= TAB 2: 物理機制探討 (Pure Theory / Lab) =================
 with tab_lab:
     st.markdown(f"#### {t['lab_ctrl']} (Theoretical Verification)")
@@ -546,6 +540,7 @@ with tab_field:
             ax2.plot(t_rk*1000, v_rk, color='#FF6B6B')
             ax2.set_xlabel("Time (ms)")
             ax2.set_
+
 
 
 
