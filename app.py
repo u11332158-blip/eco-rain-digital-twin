@@ -333,10 +333,20 @@ with tab_theory:
 # ================= TAB 2: 物理機制探討 (Pure Theory / Lab) =================
 with tab_lab:
     st.markdown(f"#### {t['lab_ctrl']} (Theoretical Verification)")
-    st.caption("在此模式下，我們固定變因來尋找「能量甜蜜點 (Energy Sweet Spot)」。")
+    st.caption("在此模式下，我們固定變因來分析物理機制。請選擇下方的分析模式。")
     
     col_ctrl, col_viz = st.columns([1, 2])
     with col_ctrl:
+        # --- [新增功能] 分析模式選擇器 ---
+        st.markdown("##### 🛠️ 分析視角選擇 (Analysis Mode)")
+        analysis_mode = st.radio(
+            "選擇要觀察的物理現象：",
+            ("🔴 A. 排水效益對比 (Smart vs. Fixed)", 
+             "🔵 B. 頻率截斷分析 (Truncation View)"),
+            index=0
+        )
+        st.markdown("---")
+
         # --- A. 環境設定 ---
         st.markdown("##### A. 環境設定 (Environment)")
         # 預設把雨量調到 50 (中等雨量)
@@ -349,121 +359,103 @@ with tab_lab:
         optimal_period = tau_s * 3 
         optimal_freq = 1 / optimal_period if optimal_period > 0 else 30
         
-        st.info(f"""
-        **物理參數:**
-        * **Smart Zeta:** `{z_s:.4f}`
-        * **Relaxation Time (tau):** `{tau_s*1000:.1f} ms`
-        * **理論最佳頻率:** `{optimal_freq:.1f} Hz`
-        """)
+        # 根據不同模式顯示不同資訊
+        if "A." in analysis_mode:
+            st.info(f"""
+            **阻尼對比:**
+            * **Fixed Zeta (紅):** `{z_f:.4f}` (高阻尼/失效)
+            * **Smart Zeta (綠):** `{z_s:.4f}` (低阻尼/活躍)
+            """)
+        else:
+            st.info(f"""
+            **時間參數:**
+            * **Relaxation Time (τ):** `{tau_s*1000:.1f} ms`
+            * **理論最佳頻率:** `{optimal_freq:.1f} Hz`
+            """)
 
         st.markdown("---")
 
-        # --- B. 頻率與甜蜜點設定 ---
-        st.markdown("##### B. 頻率優化 (Frequency Optimization)")
+        # --- B. 頻率設定 ---
+        st.markdown("##### B. 頻率設定 (Frequency)")
         
-        # [功能] 一鍵設定到甜蜜點按鈕 (無 Emoji)
-        if st.button(f"Set to Sweet Spot ({optimal_freq:.1f} Hz)"):
-            st.session_state['lab_freq_val'] = int(optimal_freq)
+        # 只在B模式顯示甜蜜點按鈕
+        if "B." in analysis_mode:
+            if st.button(f"Set to Sweet Spot ({optimal_freq:.1f} Hz)"):
+                st.session_state['lab_freq_val'] = int(optimal_freq)
         
-        # 頻率滑桿
         if 'lab_freq_val' not in st.session_state: st.session_state['lab_freq_val'] = 30
-        
         val_freq = st.slider(f"{t['impact_freq']}", 5, 120, 
                              value=st.session_state['lab_freq_val'], key="lab_freq_slider")
         st.session_state['lab_freq_val'] = val_freq
 
-        # --- 狀態判斷邏輯 ---
-        T_impact = 1 / val_freq
-        ratio = T_impact / tau_s
-        
-        if ratio < 2.0:
-            status_color = "#d32f2f" # 紅色
-            status_text = "Waveform Truncated"
-            status_desc = "撞擊太快，能量未釋放完即被切斷。"
-        elif 2.0 <= ratio <= 4.0:
-            status_color = "#fbc02d" # 金色 (甜蜜點)
-            status_text = "SWEET SPOT (Optimal)"
-            status_desc = "完美匹配！週期 T 接近 3tau，能量最大化。"
-        else:
-            status_color = "#1976d2" # 藍色
-            status_text = "Interval Too Long (Inefficient)"
-            status_desc = "雖然波形完整，但撞擊密度太低，總功率低。"
-        
-        st.markdown(f"""
-        <div style="padding:15px; border:2px solid {status_color}; background-color: {status_color}10; border-radius:8px;">
-            <h4 style="margin:0; color:{status_color};">{status_text}</h4>
-            <small style="color:#333;">{status_desc}</small>
-        </div>
-        """, unsafe_allow_html=True)
+        # --- 狀態判斷 (只在B模式顯示) ---
+        if "B." in analysis_mode:
+            T_impact = 1 / val_freq
+            ratio = T_impact / tau_s
+            if ratio < 2.0:
+                status_color, status_text = "#d32f2f", "Waveform Truncated (浪費)"
+            elif 2.0 <= ratio <= 4.0:
+                status_color, status_text = "#fbc02d", "SWEET SPOT (完美匹配)"
+            else:
+                status_color, status_text = "#1976d2", "Interval Too Long (效率低)"
+            
+            st.markdown(f"""<div style="padding:10px; border-left:5px solid {status_color}; background:{status_color}10;"><b>狀態:</b> {status_text}</div>""", unsafe_allow_html=True)
 
     with col_viz:
         st.subheader(t["lab_wave_title"])
-        
-        # --- [修正重點 1] 縮短觀察視窗，專注於「微觀截斷」 ---
-        # 原本看 150ms 太長了，120Hz 會糊成一團
-        # 我們只看 2 個週期的時間，或者固定 50ms，讓截斷效果超明顯
-        VIEW_WINDOW = 0.06 # 只看 60ms
-        t_arr = np.linspace(0, VIEW_WINDOW, 2000) 
-        T_cycle = 1 / val_freq 
-        
-        # 模擬連續波形 (Actual Response)
-        time_in_cycle = t_arr % T_cycle
-        wave_s = (1.0 * eff_s) * np.exp(-z_s * 2 * np.pi * param_fn * time_in_cycle) * \
-                 np.sin(wd * time_in_cycle)
-        
-        # --- [修正重點 2] 建立「幽靈波形 (Ideal/Ghost Wave)」 ---
-        # 這是「如果沒有下一滴雨，第一滴雨原本可以跑出的完整波形」
-        # 用來對比出 "Wasted Potential" (浪費掉的潛力)
-        # 我們只畫第一波的完整衰減
-        t_ghost = t_arr 
-        wave_ghost = (1.0 * eff_s) * np.exp(-z_s * 2 * np.pi * param_fn * t_ghost) * \
-                     np.sin(wd * t_ghost)
-        # 讓 Ghost 只在第一個週期後出現 (作為對比)
-        wave_ghost_visible = np.where(t_arr > T_cycle, wave_ghost, np.nan)
-
         fig = go.Figure()
-        
-        # 1. 畫出「幽靈波形」 (原本該有，但被切掉的能量)
-        fig.add_trace(go.Scatter(
-            x=t_arr*1000, y=wave_ghost, 
-            mode='lines', name='Wasted Potential (Ideal Decay)', 
-            line=dict(color='gray', width=2, dash='dot'),
-            opacity=0.5
-        ))
-        
-        # 2. 畫出「實際波形」 (Smart)
-        fig.add_trace(go.Scatter(
-            x=t_arr*1000, y=wave_s, 
-            mode='lines', name='Actual Response (Truncated)', 
-            line=dict(color='#2e7d32', width=3)
-        ))
-        
-        # 3. 視覺輔助線 (切斷點)
-        for i in range(1, int(VIEW_WINDOW/T_cycle) + 1):
-            fig.add_vline(x=i*T_cycle*1000, line_dash="solid", line_color="white", opacity=0.3)
-            
-            # 在第一刀切斷的地方加上註解
-            if i == 1:
-                fig.add_annotation(
-                    x=i*T_cycle*1000, y=0.5,
-                    text="Truncation Point ⚡",
-                    showarrow=True, arrowhead=1, ax=20, ay=-30,
-                    font=dict(color="yellow")
-                )
 
+        # 根據模式決定繪圖邏輯
+        if "A." in analysis_mode:
+            # === 模式 A: 紅綠對決 (排水對比) ===
+            VIEW_WINDOW = 0.2 # 看長一點 (200ms)
+            t_arr = np.linspace(0, VIEW_WINDOW, 2000)
+            T_cycle = 1 / val_freq
+            time_in_cycle = t_arr % T_cycle
+            
+            # 紅線 (高阻尼)
+            wave_f = (1.0 * eff_f) * np.exp(-z_f * 2 * np.pi * param_fn * time_in_cycle) * np.sin(wd * time_in_cycle)
+            # 綠線 (低阻尼)
+            wave_s = (1.0 * eff_s) * np.exp(-z_s * 2 * np.pi * param_fn * time_in_cycle) * np.sin(wd * time_in_cycle)
+            
+            fig.add_trace(go.Scatter(x=t_arr*1000, y=wave_s, mode='lines', name='Smart (Active)', line=dict(color='#2e7d32', width=3)))
+            fig.add_trace(go.Scatter(x=t_arr*1000, y=wave_f, mode='lines', name='Fixed (Passive)', line=dict(color='#c62828', width=2, dash='dot')))
+            title_text = f"Damping Comparison (Rain: {val_rain} mm/hr)"
+            x_range = [0, 150]
+
+        else:
+            # === 模式 B: 頻率截斷 (幽靈波形) ===
+            VIEW_WINDOW = 0.06 # 看短一點 (60ms)，專注看截斷點
+            t_arr = np.linspace(0, VIEW_WINDOW, 2000)
+            T_cycle = 1 / val_freq
+            time_in_cycle = t_arr % T_cycle
+            
+            # 實際波形 (被切斷)
+            wave_s = (1.0 * eff_s) * np.exp(-z_s * 2 * np.pi * param_fn * time_in_cycle) * np.sin(wd * time_in_cycle)
+            # 幽靈波形 (理想完整衰減)
+            wave_ghost = (1.0 * eff_s) * np.exp(-z_s * 2 * np.pi * param_fn * t_arr) * np.sin(wd * t_arr)
+            
+            fig.add_trace(go.Scatter(x=t_arr*1000, y=wave_ghost, mode='lines', name='Ideal Decay (Wasted Potential)', line=dict(color='gray', width=2, dash='dot'), opacity=0.5))
+            fig.add_trace(go.Scatter(x=t_arr*1000, y=wave_s, mode='lines', name='Actual Response (Truncated)', line=dict(color='#2e7d32', width=3)))
+            
+            # 標示切斷點
+            fig.add_vline(x=T_cycle*1000, line_dash="solid", line_color="white", opacity=0.5, annotation_text="Truncation Point ⚡", annotation_position="top left")
+            title_text = f"Frequency Truncation Analysis @ {val_freq} Hz"
+            x_range = [0, 50]
+
+        # 通用繪圖設定
         fig.update_layout(
-            title=f"Micro-View Analysis @ {val_freq} Hz",
+            title=title_text,
             xaxis_title="Time (ms)", 
             yaxis_title="Voltage (V)", 
             height=450, 
             margin=dict(l=20, r=20, t=40, b=20),
-            xaxis=dict(range=[0, 50], showgrid=True), # 固定 X 軸在微觀尺度
+            xaxis=dict(range=x_range, showgrid=True),
             yaxis=dict(range=[-1.2, 1.2]),
             showlegend=True,
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
         )
         st.plotly_chart(fig, use_container_width=True)
-
 # ================= TAB 3: 場域模擬 (Field Simulation / Monte Carlo) =================
 with tab_field:
     st.markdown(f"#### {t['field_header']}")
@@ -562,6 +554,7 @@ with tab_field:
             ax2.plot(t_rk*1000, v_rk, color='#FF6B6B')
             ax2.set_xlabel("Time (ms)")
             ax2.set_
+
 
 
 
