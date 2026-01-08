@@ -255,26 +255,87 @@ st.sidebar.text(t["dev_credit"])
 # --- Tabs ---
 tab_theory, tab_lab, tab_field = st.tabs([t["tab_theory"], t["tab_lab"], t["tab_field"]])
 
-# ================= TAB 1: 理論 =================
+# ================= TAB 1: 理論架構 (Theory & Logic - V5.1 Updated) =================
 with tab_theory:
     st.header(t["theory_header"])
-    # (理論部分保持簡潔，重點在 Lab)
-    st.markdown("### 1. Stochastic Input & Piezo Dynamics")
-    st.latex(r"N(D) = N_0 e^{-\Lambda D}")
-    st.latex(r"m_{\text{eff}} \ddot{x} + c \dot{x} + k x = F_{\text{impact}}(t)")
-    st.markdown("### 2. Solenoid Limitation Model (New!)")
-    st.info("The force $F$ decays as frequency $f$ exceeds the hardware limit (33.3Hz) due to inductance lag.")
-    st.latex(r"F_{eff}(f) = F_{max} \cdot \left(\frac{33.3}{f}\right)^{1.5} \quad \text{for } f > 33.3")
+    st.caption("Governing Equations of the Digital Twin: Bridging Lab & Nature")
     
     st.markdown("---")
-    st.markdown("### References (IEEE Standard)")
+
+    # --- Part 1: 環境物理模型 (Environmental Physics) ---
+    st.subheader("1. Environmental Input Models (Nature's Physics)")
+    col_t1, col_t2 = st.columns(2)
+    
+    with col_t1:
+        st.markdown(f"""
+        <div class="theory-box">
+        <h4>Eq. 1: Stochastic Rain (Marshall-Palmer)</h4>
+        <p>Models the random distribution of raindrop sizes in a storm.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        st.latex(r"N(D) = N_0 e^{-\Lambda D}")
+        
+        st.markdown(f"""
+        <div class="theory-box">
+        <h4>Eq. 2: Terminal Velocity (Gunn-Kinzer)</h4>
+        <p>Corrects impact momentum for air resistance.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        st.latex(r"V_{term}(D) = 9.65 - 10.3 e^{-0.6D}")
+
+    with col_t2:
+        st.markdown(f"""
+        <div class="theory-box">
+        <h4>Eq. 3: Effective Impact Angle</h4>
+        <p>Vector analysis of wind speed ($V_w$) and rain velocity ($V_t$).</p>
+        </div>
+        """, unsafe_allow_html=True)
+        st.latex(r"\theta_{eff} = \arctan\left(\frac{V_{wind}}{V_{term}}\right)")
+
+    st.markdown("---")
+
+    # --- Part 2: 系統動力模型 (System Dynamics) ---
+    st.subheader("2. System Dynamics & Constraints (Hardware vs. Nature)")
+    col_t3, col_t4 = st.columns(2)
+    
+    with col_t3:
+        st.markdown(f"""
+        <div class="theory-box">
+        <h4>Eq. 4: Piezo-Dynamics & Moment Arm</h4>
+        <p>2nd-order mass-spring-damper system with position scaling.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        st.latex(r"m_{eff} \ddot{x} + c \dot{x} + k x = F(t) \cdot \left(\frac{x_{pos}}{L}\right)^2")
+
+        st.markdown(f"""
+        <div class="theory-box">
+        <h4>Eq. 5: Ghost Damping (Water Film)</h4>
+        <p><b>Nature's Limit:</b> Damping spikes as water film ($h$) accumulates.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        st.latex(r"\zeta(t) = \zeta_{dry} + \kappa \cdot h_{film}(t)")
+        st.caption("Explains why high-freq fails in nature ($\zeta \to 0.35$).")
+
+    with col_t4:
+        st.markdown(f"""
+        <div class="theory-box">
+        <h4>Eq. 6: Solenoid Inductance Limit</h4>
+        <p><b>Lab's Limit:</b> Force decays due to magnetic lag at high freq.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        st.latex(r"F_{eff}(f) = F_{max} \cdot \left(\frac{33.3}{f}\right)^{1.5}")
+        st.caption("Explains why high-freq fails in the lab ($F \to 0$).")
+
+    # APA References
+    st.markdown("---")
+    st.markdown("### 📚 References (IEEE Standard)")
     st.markdown("""
     <div class="citation-box">
     <p><b>[1]</b> Marshall, J. S., & Palmer, W. M. (1948). The distribution of raindrops with size. <i>Journal of meteorology</i>, <i>5</i>(4), 165-166.</p>
     <p><b>[2]</b> Gunn, R., & Kinzer, G. D. (1949). The terminal velocity of fall for water droplets in stagnant air. <i>Journal of meteorology</i>, <i>6</i>(4), 243-248.</p>
+    <p><b>[3]</b> Li, S., Crovetto, A., et al. (2016). Bi-resonant structure with piezoelectric PVDF films. <i>Sensors and Actuators A</i>.</p>
     </div>
     """, unsafe_allow_html=True)
-
 # ================= TAB 2: 物理實驗室 (Core Update) =================
 with tab_lab:
     st.markdown(f"#### {t['lab_ctrl']}")
@@ -462,3 +523,4 @@ with tab_field:
             fig_mc2, ax2 = plt.subplots(figsize=(5, 4))
             ax2.plot(t_rk*1000, v_rk, color='#FF6B6B')
             st.pyplot(fig_mc2)
+
