@@ -215,7 +215,7 @@ class PhysicsEngine:
         tau = 1 / (zeta * wn)
         wd = wn * np.sqrt(1 - zeta**2)
         
-        # 【解除封印】恢復大自然的隨機落水位置，讓每次產能都有合理的隨機波動！
+        # 恢復隨機落水位置
         rand_loc = np.random.normal(loc=self.length*0.7, scale=self.length*0.2)
         rand_loc = np.clip(rand_loc, 0, self.length)
         pos_factor = (rand_loc / self.length) ** 2 
@@ -266,7 +266,7 @@ def rk4_solver(mass_beam, k_spring, dt, total_time, drop_mass, drop_velocity, we
 # ==========================================
 st.set_page_config(page_title="Eco-Rain Digital Twin", layout="wide")
 
-# --- CSS ---
+# --- CSS (UI 滿血復活) ---
 st.markdown("""
 <style>
     .metric-card { background-color: #f5f5f5 !important; border: 1px solid #e0e0e0; border-radius: 5px; padding: 15px; border-left: 5px solid #2e7d32; margin-bottom: 10px; }
@@ -303,27 +303,75 @@ st.sidebar.text(t["dev_credit"])
 # --- Tabs ---
 tab_theory, tab_lab, tab_field = st.tabs([t["tab_theory"], t["tab_lab"], t["tab_field"]])
 
-# ================= TAB 1: 理論架構 =================
+# ================= TAB 1: 理論架構 (UI 修復) =================
 with tab_theory:
     st.header(t["theory_header"])
     st.caption("Governing Equations of the Digital Twin: Bridging Lab & Nature")
     st.markdown("---")
+    
     st.subheader(t["theory_sec1"])
     col_t1, col_t2 = st.columns(2)
     with col_t1:
+        st.markdown(f"""
+        <div class="theory-box">
+        <h4>{t['eq1_title']}</h4>
+        <p>{t['eq1_desc']}</p>
+        </div>
+        """, unsafe_allow_html=True)
         st.latex(r"N(D) = N_0 e^{-\Lambda D}")
+        
+        st.markdown(f"""
+        <div class="theory-box">
+        <h4>{t['eq2_title']}</h4>
+        <p>{t['eq2_desc']}</p>
+        </div>
+        """, unsafe_allow_html=True)
         st.latex(r"V_{term}(D) = 9.65 - 10.3 e^{-0.6D}")
     with col_t2:
+        st.markdown(f"""
+        <div class="theory-box">
+        <h4>{t['eq3_title']}</h4>
+        <p>{t['eq3_desc']}</p>
+        </div>
+        """, unsafe_allow_html=True)
         st.latex(r"\theta_{eff} = \arctan\left(\frac{V_{wind}}{V_{term}}\right)")
 
+    st.markdown("---")
     st.subheader(t["theory_sec2"])
     col_t3, col_t4 = st.columns(2)
     with col_t3:
+        st.markdown(f"""
+        <div class="theory-box">
+        <h4>{t['eq4_title']}</h4>
+        <p>{t['eq4_desc']}</p>
+        </div>
+        """, unsafe_allow_html=True)
         st.latex(r"m_{eff} \ddot{x} + c \dot{x} + k x = F(t) \cdot \left(\frac{x_{pos}}{L}\right)^2")
+
+        st.markdown(f"""
+        <div class="theory-box">
+        <h4>{t['eq5_title']}</h4>
+        <p>{t['eq5_desc']}</p>
+        </div>
+        """, unsafe_allow_html=True)
         st.latex(r"\zeta(t) = \zeta_{dry} + \kappa \cdot h_{film}(t)")
     with col_t4:
+        st.markdown(f"""
+        <div class="theory-box">
+        <h4>{t['eq6_title']}</h4>
+        <p>{t['eq6_desc']}</p>
+        </div>
+        """, unsafe_allow_html=True)
         st.latex(r"F_{eff}(f) = F_{max} \cdot \left(\frac{33.3}{f}\right)^{1.5}")
 
+    st.markdown("---")
+    st.markdown("### 📚 References (IEEE Standard)")
+    st.markdown("""
+    <div class="citation-box">
+    <p><b>[1]</b> Li, S., Crovetto, A., et al. (2016). Bi-resonant structure with piezoelectric PVDF films. <i>Sensors and Actuators A</i>.</p>
+    <p><b>[2]</b> Bowland, A., & Muriuki, M. (2010). New concepts in modeling damping in structures. <i>10th CCEE</i>.</p>
+    </div>
+    """, unsafe_allow_html=True)
 
 # ================= TAB 2: 物理實驗室 =================
 with tab_lab:
@@ -431,14 +479,21 @@ with tab_field:
             st.info(t["use_sim"])
             sim_duration = st.slider(t["sim_duration"], 1, 24, 16) 
             
-            # 【解除封印】在降雨曲線上加入亂數擾動，每次都會是不一樣的雨勢！
-            h = np.arange(0, sim_duration + 1, 1) 
-            peak_time = sim_duration / 2
-            r_base = 10 + 100 * np.exp(-0.5 * (h - peak_time)**2/2.5) 
-            r_noise = np.random.normal(0, 10, len(h)) # 加入正負 10 mm/hr 的隨機雨勢波動
-            r = np.clip(r_base + r_noise, 0, None)
-            w = 5 + 25 * np.exp(-0.5 * (h - peak_time)**2/3) + np.random.normal(0, 2, len(h))
-            df = pd.DataFrame({'Time': h, 'Rain': r, 'Wind': np.clip(w, 0, None)})
+            # 【關鍵修復】使用 Session State 暫存天氣資料，解決亂數抖動！
+            if st.button("🔄 Regenerate Storm"):
+                st.session_state['sim_df'] = None # 強制重刷天氣
+                
+            if 'sim_df' not in st.session_state or st.session_state.get('last_duration') != sim_duration or st.session_state['sim_df'] is None:
+                h = np.arange(0, sim_duration + 1, 1) 
+                peak_time = sim_duration / 2
+                r_base = 10 + 100 * np.exp(-0.5 * (h - peak_time)**2/2.5) 
+                r_noise = np.random.normal(0, 10, len(h))
+                r = np.clip(r_base + r_noise, 0, None)
+                w = 5 + 25 * np.exp(-0.5 * (h - peak_time)**2/3) + np.random.normal(0, 2, len(h))
+                st.session_state['sim_df'] = pd.DataFrame({'Time': h, 'Rain': r, 'Wind': np.clip(w, 0, None)})
+                st.session_state['last_duration'] = sim_duration
+            
+            df = st.session_state['sim_df']
         
         if df is not None:
             with st.expander(t["view_weather"]):
@@ -452,6 +507,7 @@ with tab_field:
             
             ARRAY_SIZE = 10        # 10片 PVDF 陣列
             MOTOR_COST = 75.0      # 單次伺服馬達作動耗能 (mJ)
+            SMART_THRESHOLD = 15.0 # 關鍵：降雨大於 15 mm/hr 才是致災水膜，才啟動馬達
             
             for idx, row in df.iterrows():
                 R, W = row['Rain'], row['Wind']
@@ -461,19 +517,20 @@ with tab_field:
                 f_f, z_f, eff_f, tau_f, _, _, pos_f, _ = engine.get_params(R, W, "Fixed")
                 trunc_f = 1 / (1 + PhysConfig.TRUNCATION_SHAPE_FACTOR * f_f * tau_f)
                 
-                # 計算原始產能 (因為 pos_s 恢復亂數，所以這裡會有真實的波動！)
+                # 計算單片原始產能
                 energy_s_raw = f_s * (eff_s**2) * trunc_s * (R**0.5) * pos_s * PhysConfig.BASE_POWER_FACTOR
                 energy_f = f_f * (eff_f**2) * trunc_f * (R**0.5) * pos_f * PhysConfig.BASE_POWER_FACTOR
                 
                 cum_s_raw += energy_s_raw
                 cum_f += energy_f
                 
-                # 【真實物理負債邏輯：只要有雨，馬達就會動，有可能虧到變負數！】
-                if R > 0:
-                    actions = max(1, R / 20.0) 
+                # 【完美工程邏輯】：加入智慧感測閾值
+                # 小於 15 mm/hr 的毛毛雨，水膜不會癱瘓系統，馬達不啟動 (0 耗能)
+                # 大於 15 mm/hr 時，馬達才啟動，雨越大抽越多次
+                if R > SMART_THRESHOLD:
+                    actions = max(1, (R - SMART_THRESHOLD) / 10.0)
                     total_motor_cost += (MOTOR_COST * actions)
                 
-                # 直接相減，容許出現虧損 (負值)
                 current_net_s = (cum_s_raw * ARRAY_SIZE) - total_motor_cost
                 current_net_f = cum_f * ARRAY_SIZE
                 
@@ -485,19 +542,17 @@ with tab_field:
             cum_s_net = total_array_raw - total_motor_cost
             
             eroi = total_array_raw / total_motor_cost if total_motor_cost > 0 else 0
-            gain = ((cum_s_net - cum_f_total) / cum_f_total) * 100 if cum_f_total > 0 and cum_s_net > 0 else 0
+            gain = ((cum_s_net - cum_f_total) / cum_f_total) * 100 if cum_f_total > 0 else 0
             
             m1, m2, m3 = st.columns(3)
             m1.metric(t["metric_fixed"], f"{int(cum_f_total):,} {t['unit_energy']}", "Baseline")
-            m2.metric(t["metric_smart"], f"{int(cum_s_net):,} {t['unit_energy']}", f"{gain:.1f}%")
+            m2.metric(t["metric_smart"], f"{int(cum_s_net):,} {t['unit_energy']}", f"+{gain:.1f}%")
             m3.metric(t["metric_eroi"], f"{eroi:.2f}", "Array Design")
             
             fig2 = go.Figure()
-            # 讓負值可以顯示出來，並保留美麗的折線設計
-            fig2.add_trace(go.Scatter(x=df['Time'], y=acc_s_list, name='Smart (10-Array)', line=dict(color='#2e7d32', width=3)))
-            fig2.add_trace(go.Scatter(x=df['Time'], y=acc_f_list, name='Fixed (10-Array)', line=dict(color='#c62828', width=2, dash='dot')))
+            fig2.add_trace(go.Scatter(x=df['Time'], y=acc_s_list, name='Smart (10-Array)', fill='tozeroy', line=dict(color='#2e7d32', width=3)))
+            fig2.add_trace(go.Scatter(x=df['Time'], y=acc_f_list, name='Fixed (10-Array)', fill='tozeroy', line=dict(color='#c62828', width=2, dash='dot')))
             
-            # 加上一條「零基準線」，讓評審可以清楚看到什麼時候開始「虧錢」與「回本」
             fig2.add_hline(y=0, line_dash="solid", line_color="gray", opacity=0.5)
             
             fig2.update_layout(title=t["chart_cum_title"], height=350, margin=dict(l=0,r=0,t=30,b=0), yaxis_title="Energy (mJ)")
