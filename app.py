@@ -20,7 +20,6 @@ TRANSLATIONS = {
         "tab_theory": "Theory & Logic",
         "tab_lab": "Physics Lab",
         "tab_field": "Field Simulation",
-        # Theory Tab (Full Keys)
         "theory_header": "Physics Logic & Models",
         "theory_sec1": "1. Environmental Input Models (Nature)",
         "theory_sec2": "2. System Dynamics (Hardware vs. Nature)",
@@ -36,7 +35,6 @@ TRANSLATIONS = {
         "eq5_desc": "Damping spikes as water film accumulates.",
         "eq6_title": "Eq. 6: Solenoid Limit (Lab)",
         "eq6_desc": "Force decays due to inductance lag at high freq.",
-        # Lab Tab
         "lab_ctrl": "Parameter Control",
         "lab_env": "Experiment A: Ghost Damping Effect",
         "lab_freq_sect": "Experiment B: Solenoid Hardware Limit",
@@ -47,7 +45,6 @@ TRANSLATIONS = {
         "wind_speed": "Wind Speed (m/s)",
         "impact_freq": "Impact Freq (Hz)",
         "solenoid_eff": "Solenoid Force Efficiency",
-        # Field Tab
         "field_header": "Real-world Scenario Simulation",
         "sim_params": "Simulation Parameters",
         "sim_duration": "Duration (Hours)",
@@ -75,7 +72,6 @@ TRANSLATIONS = {
         "tab_theory": "理論架構",
         "tab_lab": "物理實驗室",
         "tab_field": "場域模擬",
-        # Theory Tab (Full Keys)
         "theory_header": "系統運算邏輯與物理模型",
         "theory_sec1": "1. 環境物理模型 (大自然輸入)",
         "theory_sec2": "2. 系統動力模型 (硬體限制 vs 自然限制)",
@@ -91,7 +87,6 @@ TRANSLATIONS = {
         "eq5_desc": "隨著水膜累積，阻尼比急劇上升。",
         "eq6_title": "Eq. 6: 電磁閥限制 (實驗室限制)",
         "eq6_desc": "高頻時因電感滯後導致力道衰減。",
-        # Lab Tab
         "lab_ctrl": "變因控制實驗",
         "lab_env": "實驗 A：水膜阻尼效應 (Ghost Damping)",
         "lab_freq_sect": "實驗 B：電磁閥物理限制 (Solenoid Limit)",
@@ -102,7 +97,6 @@ TRANSLATIONS = {
         "wind_speed": "環境風速 (m/s)",
         "impact_freq": "撞擊頻率 (Hz)",
         "solenoid_eff": "電磁閥力道效率",
-        # Field Tab
         "field_header": "真實情境模擬",
         "sim_params": "模擬參數",
         "sim_duration": "模擬時長 (小時)",
@@ -130,7 +124,6 @@ TRANSLATIONS = {
         "tab_theory": "理論とロジック",
         "tab_lab": "物理実験室",
         "tab_field": "フィールド・シミュレーション",
-        # Theory Tab (Full Keys)
         "theory_header": "物理ロジックとモデル",
         "theory_sec1": "1. 環境入力モデル (自然物理)",
         "theory_sec2": "2. システムダイナミクス (ハードウェア vs 自然)",
@@ -146,7 +139,6 @@ TRANSLATIONS = {
         "eq5_desc": "水膜の蓄積に伴い減衰比が急増。",
         "eq6_title": "Eq. 6: ソレノイド限界 (実験室限界)",
         "eq6_desc": "高周波時のインダクタンス遅延による力減衰。",
-        # Lab Tab
         "lab_ctrl": "パラメータ制御",
         "lab_env": "実験 A：水膜減衰効果",
         "lab_freq_sect": "実験 B：ソレノイド物理限界",
@@ -157,7 +149,6 @@ TRANSLATIONS = {
         "wind_speed": "風速 (m/s)",
         "impact_freq": "衝突周波数 (Hz)",
         "solenoid_eff": "ソレノイド効率",
-        # Field Tab
         "field_header": "実環境シミュレーション",
         "sim_params": "シミュレーションパラメータ",
         "sim_duration": "時間 (Hours)",
@@ -174,6 +165,7 @@ TRANSLATIONS = {
         "sim_success": "{n} 個の雨滴データを生成しました。"
     }
 }
+
 # ==========================================
 # 2. 物理常數定義區 (Physical Config)
 # ==========================================
@@ -301,6 +293,7 @@ st.sidebar.info("TE Connectivity LDT0-028K (PVDF)")
 param_beam_len = st.sidebar.number_input(t["beam_len"], 3.0, 10.0, 5.0, step=0.5)
 param_area = st.sidebar.number_input(t["area"], 0.5, 10.0, 2.5, format="%.1f")
 param_fn = st.sidebar.number_input(t["freq"], 50, 200, 100, format="%d")
+# 原本的 slider 還是留著，如果未來想測試不同的參數
 drainage_cost_pct = st.sidebar.slider(t["drainage_cost"], 1.0, 10.0, 5.0)
 
 engine = PhysicsEngine(area=param_area, fn=param_fn, length=param_beam_len)
@@ -380,7 +373,7 @@ with tab_theory:
         """, unsafe_allow_html=True)
         st.latex(r"F_{eff}(f) = F_{max} \cdot \left(\frac{33.3}{f}\right)^{1.5}")
 
-    # References (IEEE Standard) - 補齊4篇
+    # References (IEEE Standard)
     st.markdown("---")
     st.markdown("### 📚 References (IEEE Standard)")
     st.markdown("""
@@ -391,6 +384,7 @@ with tab_theory:
     <p><b>[4]</b> Xu, W., Zheng, H., Liu, Y., et al. (2020). A droplet-based electricity generator with high instantaneous power density. <i>Nature</i>.</p>
     </div>
     """, unsafe_allow_html=True)
+
 # ================= TAB 2: 物理實驗室 (Core Update) =================
 with tab_lab:
     st.markdown(f"#### {t['lab_ctrl']}")
@@ -426,7 +420,6 @@ with tab_lab:
     st.markdown("---")
 
     # === 實驗 B: 電磁閥物理限制 (Solenoid Limit) ===
-    # 核心邏輯修正：頻率越高 -> 力道(振幅)越弱
     st.markdown(f"##### {t['lab_freq_sect']}")
     
     col_b1, col_b2 = st.columns([1, 2])
@@ -442,7 +435,6 @@ with tab_lab:
         st.session_state['exp_b_freq'] = val_freq_b
 
         # === 核心算法：電磁閥效率模型 ===
-        # 超過 33.3 Hz 後，力道按 (33.3/f)^1.5 衰減
         if val_freq_b <= optimal_freq:
             solenoid_eff = 1.0
             status_color, status_text = "#fbc02d", "✅ Full Force (Sweet Spot)"
@@ -457,33 +449,20 @@ with tab_lab:
         _, z_s, eff_s, tau_s, wd, _, _, _ = engine.get_params(FIXED_RAIN_B, 0, "Smart")
 
     with col_b2:
-        # 繪圖：顯示 "理想最大力道" vs "實際衰減後力道"
-        # 觀察 120Hz 時，綠線會變得很矮
         FULL_DECAY_TIME = tau_s * 3 
         t_arr_b = np.linspace(0, FULL_DECAY_TIME, 1000)
         
-        # 1. 幽靈波形 (理想最大力道 - 假設電磁閥無敵)
         wave_ghost = (1.0 * eff_s) * np.exp(-z_s * 2 * np.pi * param_fn * t_arr_b) * np.sin(wd * t_arr_b)
-        
-        # 2. 實際波形 (受電磁閥物理限制，振幅縮水)
-        # 同時也受到時間截斷 (Truncation) 的影響
         T_impact_limit = 1 / val_freq_b
-        wave_actual = wave_ghost * solenoid_eff # <--- 關鍵修正：乘上效率係數
+        wave_actual = wave_ghost * solenoid_eff 
         
-        # 視覺化：超過時間變 NaN
         wave_viz = np.where(t_arr_b <= T_impact_limit, wave_actual, None)
 
         fig_b = go.Figure()
-        
-        # 灰色虛線：原本可以打出的力道 (Potential)
         fig_b.add_trace(go.Scatter(x=t_arr_b*1000, y=wave_ghost, mode='lines', name='Ideal Impact Force', 
                                   line=dict(color='gray', width=2, dash='dot'), opacity=0.5))
-        
-        # 綠色實線：實際打出的力道 (弱化版)
         fig_b.add_trace(go.Scatter(x=t_arr_b*1000, y=wave_viz, mode='lines', name='Actual Impact (Weakened)', 
                                   line=dict(color='#2e7d32', width=3), fill='tozeroy'))
-        
-        # 切斷點
         fig_b.add_vline(x=T_impact_limit*1000, line_dash="solid", line_color="#d32f2f", opacity=0.8, 
                        annotation_text="Next Hit", annotation_position="top right")
         
@@ -491,7 +470,7 @@ with tab_lab:
             title=f"Fig 3: Solenoid Physics @ {val_freq_b} Hz (Force Eff: {solenoid_eff*100:.0f}%)",
             xaxis_title="Time (ms)", yaxis_title="Voltage (V)", height=350,
             margin=dict(l=20, r=20, t=40, b=20),
-            yaxis=dict(range=[-1.2, 1.2]) # 固定 Y 軸，更能看出振幅變矮
+            yaxis=dict(range=[-1.2, 1.2]) 
         )
         st.plotly_chart(fig_b, use_container_width=True)
 
@@ -522,7 +501,7 @@ with tab_field:
             with st.expander(t["view_weather"]):
                 st.dataframe(df, height=150)
 
-   with col_sim:
+    with col_sim:
         if df is not None:
             acc_s_list, acc_f_list = [], []
             cum_s_raw, cum_f = 0, 0
@@ -598,5 +577,3 @@ with tab_field:
             fig_mc2, ax2 = plt.subplots(figsize=(5, 4))
             ax2.plot(t_rk*1000, v_rk, color='#FF6B6B')
             st.pyplot(fig_mc2)
-
-
