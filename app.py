@@ -522,10 +522,15 @@ with tab_field:
             with st.expander(t["view_weather"]):
                 st.dataframe(df, height=150)
 
-    with col_sim:
+   with col_sim:
         if df is not None:
             acc_s_list, acc_f_list = [], []
-            cum_s, cum_f = 0, 0
+            cum_s_raw, cum_f = 0, 0
+            total_motor_cost = 0
+            
+            # --- 物理參數設定 (對應報告中的模組化陣列) ---
+            ARRAY_SIZE = 10        # 10片 PVDF 陣列
+            MOTOR_COST = 75.0      # 單次伺服馬達作動耗能 (mJ)
             
             for idx, row in df.iterrows():
                 R, W = row['Rain'], row['Wind']
@@ -534,27 +539,42 @@ with tab_field:
                 f_f, z_f, eff_f, tau_f, _, _, pos_f, loc_f = engine.get_params(R, W, "Fixed")
                 trunc_f = 1 / (1 + PhysConfig.TRUNCATION_SHAPE_FACTOR * f_f * tau_f)
                 
+                # 計算單片原始產能
                 energy_s_raw = f_s * (eff_s**2) * trunc_s * (R**0.5) * pos_s * PhysConfig.BASE_POWER_FACTOR
-                drainage_loss = energy_s_raw * (drainage_cost_pct / 100.0)
-                energy_s_net = energy_s_raw - drainage_loss
                 energy_f = f_f * (eff_f**2) * trunc_f * (R**0.5) * pos_f * PhysConfig.BASE_POWER_FACTOR
                 
-                cum_s += energy_s_net
+                cum_s_raw += energy_s_raw
                 cum_f += energy_f
-                acc_s_list.append(cum_s)
-                acc_f_list.append(cum_f)
+                
+                # 【修正核心：動態馬達耗能計算】
+                if R > 0:
+                    # 降雨越強，積水越快，馬達啟動越頻繁 (例如每 20 mm/hr 多啟動一次)
+                    actions = max(1, R / 20.0) 
+                    total_motor_cost += (MOTOR_COST * actions)
+                
+                # 計算陣列累積淨產能 = (單片發電量 * 10片) - 共用馬達耗能
+                current_net_s = (cum_s_raw * ARRAY_SIZE) - total_motor_cost
+                current_net_f = cum_f * ARRAY_SIZE  # 傳統固定式陣列 (無馬達耗能)
+                
+                acc_s_list.append(current_net_s)
+                acc_f_list.append(current_net_f)
             
-            gain = ((cum_s - cum_f) / cum_f) * 100 if cum_f > 0 else 0
-            eroi = cum_s / (cum_s * (drainage_cost_pct/100)) if cum_s > 0 else 0
+            # 計算最終 EROI 與產能提升率 (Gain)
+            total_array_raw = cum_s_raw * ARRAY_SIZE
+            cum_f_total = cum_f * ARRAY_SIZE
+            cum_s_net = total_array_raw - total_motor_cost
+            
+            eroi = total_array_raw / total_motor_cost if total_motor_cost > 0 else 0
+            gain = ((cum_s_net - cum_f_total) / cum_f_total) * 100 if cum_f_total > 0 else 0
             
             m1, m2, m3 = st.columns(3)
-            m1.metric(t["metric_fixed"], f"{int(cum_f):,} {t['unit_energy']}", "Baseline")
-            m2.metric(t["metric_smart"], f"{int(cum_s):,} {t['unit_energy']}", f"+{gain:.1f}%")
-            m3.metric(t["metric_eroi"], f"{eroi:.1f}", f"Cost: {drainage_cost_pct}%")
+            m1.metric(t["metric_fixed"], f"{int(cum_f_total):,} {t['unit_energy']}", "Baseline")
+            m2.metric(t["metric_smart"], f"{int(cum_s_net):,} {t['unit_energy']}", f"+{gain:.1f}%")
+            m3.metric(t["metric_eroi"], f"{eroi:.2f}", "Array Design")
             
             fig2 = go.Figure()
-            fig2.add_trace(go.Scatter(x=df['Time'], y=acc_s_list, fill='tozeroy', name='Smart', line=dict(color='#2e7d32')))
-            fig2.add_trace(go.Scatter(x=df['Time'], y=acc_f_list, fill='tozeroy', name='Fixed', line=dict(color='#c62828')))
+            fig2.add_trace(go.Scatter(x=df['Time'], y=acc_s_list, fill='tozeroy', name='Smart (10-Array)', line=dict(color='#2e7d32')))
+            fig2.add_trace(go.Scatter(x=df['Time'], y=acc_f_list, fill='tozeroy', name='Fixed (10-Array)', line=dict(color='#c62828')))
             fig2.update_layout(title=t["chart_cum_title"], height=350, margin=dict(l=0,r=0,t=30,b=0))
             st.plotly_chart(fig2, use_container_width=True)
 
@@ -578,4 +598,5 @@ with tab_field:
             fig_mc2, ax2 = plt.subplots(figsize=(5, 4))
             ax2.plot(t_rk*1000, v_rk, color='#FF6B6B')
             st.pyplot(fig_mc2)
+
 
