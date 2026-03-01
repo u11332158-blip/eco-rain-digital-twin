@@ -178,7 +178,7 @@ class PhysConfig:
     
     SATURATION_RAIN_RATE = 120.0      
     SMART_SYSTEM_WETNESS_RATIO = 0.2  
-    BASE_POWER_FACTOR = 1.0           
+    BASE_POWER_FACTOR = 0.5           # 【還原】維持你原本計算的縮放比例，產出不會暴增
     TRUNCATION_SHAPE_FACTOR = 0.6     
 
 # ==========================================
@@ -215,7 +215,6 @@ class PhysicsEngine:
         tau = 1 / (zeta * wn)
         wd = wn * np.sqrt(1 - zeta**2)
         
-        # 恢復隨機落水位置
         rand_loc = np.random.normal(loc=self.length*0.7, scale=self.length*0.2)
         rand_loc = np.clip(rand_loc, 0, self.length)
         pos_factor = (rand_loc / self.length) ** 2 
@@ -266,29 +265,14 @@ def rk4_solver(mass_beam, k_spring, dt, total_time, drop_mass, drop_velocity, we
 # ==========================================
 st.set_page_config(page_title="Eco-Rain Digital Twin", layout="wide")
 
-# --- CSS (UI 滿血復活) ---
-st.markdown("""
-<style>
-    .metric-card { background-color: #f5f5f5 !important; border: 1px solid #e0e0e0; border-radius: 5px; padding: 15px; border-left: 5px solid #2e7d32; margin-bottom: 10px; }
-    .metric-card h4, .metric-card p, .metric-card span, .metric-card div { color: #000000 !important; }
-    .theory-box { background-color: #ffffff !important; padding: 20px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    .theory-box h4 { color: #1565c0 !important; font-weight: bold; margin-bottom: 10px; }
-    .theory-box p, .theory-box li, .theory-box span, .theory-box div, .theory-box b { color: #212121 !important; font-size: 1.05em; line-height: 1.6; }
-    .citation-box { background-color: #fff3e0 !important; padding: 15px; border-radius: 5px; border-left: 5px solid #ff9800; font-size: 0.9em; margin-top: 20px; }
-    .citation-box p, .citation-box i, .citation-box b, .citation-box span { color: #333333 !important; }
-</style>
-""", unsafe_allow_html=True)
-
-# --- 語言 ---
+# 拿掉會跑版的客製化 HTML，改用原生容器
 st.sidebar.markdown("### Language / 語言 / 言語")
 selected_lang = st.sidebar.selectbox("Select Language", ["English", "繁體中文", "日本語"], label_visibility="collapsed")
 t = TRANSLATIONS[selected_lang] 
 
-# --- 側邊欄 ---
 st.title(t["title"])
 st.caption("Physics-Informed Digital Twin Platform")
 st.sidebar.markdown(f"### {t['sidebar_settings']}")
-st.sidebar.markdown(f"**{t['target_material']}:**")
 st.sidebar.info("TE Connectivity LDT0-028K (PVDF)")
 
 param_beam_len = st.sidebar.number_input(t["beam_len"], 3.0, 10.0, 5.0, step=0.5)
@@ -300,10 +284,9 @@ engine = PhysicsEngine(area=param_area, fn=param_fn, length=param_beam_len)
 st.sidebar.markdown("---")
 st.sidebar.text(t["dev_credit"])
 
-# --- Tabs ---
 tab_theory, tab_lab, tab_field = st.tabs([t["tab_theory"], t["tab_lab"], t["tab_field"]])
 
-# ================= TAB 1: 理論架構 (UI 修復) =================
+# ================= TAB 1: 理論架構 (UI完美修復版) =================
 with tab_theory:
     st.header(t["theory_header"])
     st.caption("Governing Equations of the Digital Twin: Bridging Lab & Nature")
@@ -311,67 +294,45 @@ with tab_theory:
     
     st.subheader(t["theory_sec1"])
     col_t1, col_t2 = st.columns(2)
+    
     with col_t1:
-        st.markdown(f"""
-        <div class="theory-box">
-        <h4>{t['eq1_title']}</h4>
-        <p>{t['eq1_desc']}</p>
-        </div>
-        """, unsafe_allow_html=True)
-        st.latex(r"N(D) = N_0 e^{-\Lambda D}")
-        
-        st.markdown(f"""
-        <div class="theory-box">
-        <h4>{t['eq2_title']}</h4>
-        <p>{t['eq2_desc']}</p>
-        </div>
-        """, unsafe_allow_html=True)
-        st.latex(r"V_{term}(D) = 9.65 - 10.3 e^{-0.6D}")
+        # 使用 Streamlit 內建的美觀容器，取代原本會消失的 HTML
+        with st.container(border=True):
+            st.markdown(f"**{t['eq1_title']}**")
+            st.caption(t['eq1_desc'])
+            st.latex(r"N(D) = N_0 e^{-\Lambda D}")
+            
+        with st.container(border=True):
+            st.markdown(f"**{t['eq2_title']}**")
+            st.caption(t['eq2_desc'])
+            st.latex(r"V_{term}(D) = 9.65 - 10.3 e^{-0.6D}")
+            
     with col_t2:
-        st.markdown(f"""
-        <div class="theory-box">
-        <h4>{t['eq3_title']}</h4>
-        <p>{t['eq3_desc']}</p>
-        </div>
-        """, unsafe_allow_html=True)
-        st.latex(r"\theta_{eff} = \arctan\left(\frac{V_{wind}}{V_{term}}\right)")
+        with st.container(border=True):
+            st.markdown(f"**{t['eq3_title']}**")
+            st.caption(t['eq3_desc'])
+            st.latex(r"\theta_{eff} = \arctan\left(\frac{V_{wind}}{V_{term}}\right)")
 
     st.markdown("---")
     st.subheader(t["theory_sec2"])
     col_t3, col_t4 = st.columns(2)
+    
     with col_t3:
-        st.markdown(f"""
-        <div class="theory-box">
-        <h4>{t['eq4_title']}</h4>
-        <p>{t['eq4_desc']}</p>
-        </div>
-        """, unsafe_allow_html=True)
-        st.latex(r"m_{eff} \ddot{x} + c \dot{x} + k x = F(t) \cdot \left(\frac{x_{pos}}{L}\right)^2")
+        with st.container(border=True):
+            st.markdown(f"**{t['eq4_title']}**")
+            st.caption(t['eq4_desc'])
+            st.latex(r"m_{eff} \ddot{x} + c \dot{x} + k x = F(t) \cdot \left(\frac{x_{pos}}{L}\right)^2")
 
-        st.markdown(f"""
-        <div class="theory-box">
-        <h4>{t['eq5_title']}</h4>
-        <p>{t['eq5_desc']}</p>
-        </div>
-        """, unsafe_allow_html=True)
-        st.latex(r"\zeta(t) = \zeta_{dry} + \kappa \cdot h_{film}(t)")
+        with st.container(border=True):
+            st.markdown(f"**{t['eq5_title']}**")
+            st.caption(t['eq5_desc'])
+            st.latex(r"\zeta(t) = \zeta_{dry} + \kappa \cdot h_{film}(t)")
+            
     with col_t4:
-        st.markdown(f"""
-        <div class="theory-box">
-        <h4>{t['eq6_title']}</h4>
-        <p>{t['eq6_desc']}</p>
-        </div>
-        """, unsafe_allow_html=True)
-        st.latex(r"F_{eff}(f) = F_{max} \cdot \left(\frac{33.3}{f}\right)^{1.5}")
-
-    st.markdown("---")
-    st.markdown("### 📚 References (IEEE Standard)")
-    st.markdown("""
-    <div class="citation-box">
-    <p><b>[1]</b> Li, S., Crovetto, A., et al. (2016). Bi-resonant structure with piezoelectric PVDF films. <i>Sensors and Actuators A</i>.</p>
-    <p><b>[2]</b> Bowland, A., & Muriuki, M. (2010). New concepts in modeling damping in structures. <i>10th CCEE</i>.</p>
-    </div>
-    """, unsafe_allow_html=True)
+        with st.container(border=True):
+            st.markdown(f"**{t['eq6_title']}**")
+            st.caption(t['eq6_desc'])
+            st.latex(r"F_{eff}(f) = F_{max} \cdot \left(\frac{33.3}{f}\right)^{1.5}")
 
 # ================= TAB 2: 物理實驗室 =================
 with tab_lab:
@@ -386,11 +347,7 @@ with tab_lab:
         FIXED_FREQ_A = 5 
         _, z_f, eff_f, _, wd, _, _, _ = engine.get_params(val_rain_a, 0, "Fixed", freq_override=FIXED_FREQ_A)
         _, z_s, eff_s, _, _, _, _, _  = engine.get_params(val_rain_a, 0, "Smart", freq_override=FIXED_FREQ_A)
-        st.info(f"""
-        **Zeta Comparison:**
-        * **Fixed (Red):** `{z_f:.4f}`
-        * **Smart (Green):** `{z_s:.4f}`
-        """)
+        st.info(f"**Zeta Comparison:**\n* **Fixed (Red):** `{z_f:.4f}`\n* **Smart (Green):** `{z_s:.4f}`")
 
     with col_a2:
         VIEW_WINDOW_A = 0.2
@@ -423,13 +380,12 @@ with tab_lab:
 
         if val_freq_b <= optimal_freq:
             solenoid_eff = 1.0
-            status_color, status_text = "#fbc02d", "✅ Full Force (Sweet Spot)"
+            st.success(f"✅ Full Force (Sweet Spot)")
         else:
             solenoid_eff = (optimal_freq / val_freq_b) ** 1.5
-            status_color, status_text = "#d32f2f", "⚠️ Force Drop (Valve Lag)"
+            st.error(f"⚠️ Force Drop (Valve Lag)")
 
         st.metric(label=t["solenoid_eff"], value=f"{solenoid_eff*100:.1f}%", delta=f"Loss: -{(1-solenoid_eff)*100:.1f}%" if solenoid_eff < 1 else "Max Power")
-        st.markdown(f"""<div style="padding:10px; border-left:5px solid {status_color}; background:{status_color}10;"><b>Status:</b> {status_text}</div>""", unsafe_allow_html=True)
         
         FIXED_RAIN_B = 50 
         _, z_s, eff_s, tau_s, wd, _, _, _ = engine.get_params(FIXED_RAIN_B, 0, "Smart")
@@ -445,23 +401,14 @@ with tab_lab:
         wave_viz = np.where(t_arr_b <= T_impact_limit, wave_actual, None)
 
         fig_b = go.Figure()
-        fig_b.add_trace(go.Scatter(x=t_arr_b*1000, y=wave_ghost, mode='lines', name='Ideal Impact Force', 
-                                  line=dict(color='gray', width=2, dash='dot'), opacity=0.5))
-        fig_b.add_trace(go.Scatter(x=t_arr_b*1000, y=wave_viz, mode='lines', name='Actual Impact (Weakened)', 
-                                  line=dict(color='#2e7d32', width=3), fill='tozeroy'))
-        fig_b.add_vline(x=T_impact_limit*1000, line_dash="solid", line_color="#d32f2f", opacity=0.8, 
-                       annotation_text="Next Hit", annotation_position="top right")
+        fig_b.add_trace(go.Scatter(x=t_arr_b*1000, y=wave_ghost, mode='lines', name='Ideal Impact Force', line=dict(color='gray', width=2, dash='dot'), opacity=0.5))
+        fig_b.add_trace(go.Scatter(x=t_arr_b*1000, y=wave_viz, mode='lines', name='Actual Impact (Weakened)', line=dict(color='#2e7d32', width=3), fill='tozeroy'))
+        fig_b.add_vline(x=T_impact_limit*1000, line_dash="solid", line_color="#d32f2f", opacity=0.8)
         
-        fig_b.update_layout(
-            title=f"Fig 3: Solenoid Physics @ {val_freq_b} Hz (Force Eff: {solenoid_eff*100:.0f}%)",
-            xaxis_title="Time (ms)", yaxis_title="Voltage (V)", height=350,
-            margin=dict(l=20, r=20, t=40, b=20),
-            yaxis=dict(range=[-1.2, 1.2]) 
-        )
+        fig_b.update_layout(title=f"Fig 3: Solenoid Physics @ {val_freq_b} Hz (Force Eff: {solenoid_eff*100:.0f}%)", xaxis_title="Time (ms)", yaxis_title="Voltage (V)", height=350, margin=dict(l=20, r=20, t=40, b=20), yaxis=dict(range=[-1.2, 1.2]))
         st.plotly_chart(fig_b, use_container_width=True)
 
-
-# ================= TAB 3: 場域模擬 =================
+# ================= TAB 3: 場域模擬 (能量修復版) =================
 with tab_field:
     st.markdown(f"#### {t['field_header']}")
     st.markdown("##### 1. Long-term Rainfall Simulation")
@@ -472,28 +419,19 @@ with tab_field:
         if uploaded_file is not None:
             st.success(t["use_csv"])
             df = pd.read_csv(uploaded_file)
-            if not {'Time', 'Rain', 'Wind'}.issubset(df.columns):
-                st.error("CSV must contain: Time, Rain, Wind")
-                df = None
         else:
             st.info(t["use_sim"])
             sim_duration = st.slider(t["sim_duration"], 1, 24, 16) 
             
-            # 【關鍵修復】使用 Session State 暫存天氣資料，解決亂數抖動！
-            if st.button("🔄 Regenerate Storm"):
-                st.session_state['sim_df'] = None # 強制重刷天氣
-                
-            if 'sim_df' not in st.session_state or st.session_state.get('last_duration') != sim_duration or st.session_state['sim_df'] is None:
-                h = np.arange(0, sim_duration + 1, 1) 
-                peak_time = sim_duration / 2
-                r_base = 10 + 100 * np.exp(-0.5 * (h - peak_time)**2/2.5) 
-                r_noise = np.random.normal(0, 10, len(h))
-                r = np.clip(r_base + r_noise, 0, None)
-                w = 5 + 25 * np.exp(-0.5 * (h - peak_time)**2/3) + np.random.normal(0, 2, len(h))
-                st.session_state['sim_df'] = pd.DataFrame({'Time': h, 'Rain': r, 'Wind': np.clip(w, 0, None)})
-                st.session_state['last_duration'] = sim_duration
+            h = np.arange(0, sim_duration + 1, 1) 
+            peak_time = sim_duration / 2
             
-            df = st.session_state['sim_df']
+            # 【關鍵修復】加入截斷，讓雨真的會停，能量曲線才會平息不亂飆
+            r = 120 * np.exp(-0.5 * (h - peak_time)**2 / 3.0) 
+            r[r < 2.0] = 0.0  # 強制切除毛毛雨雜訊
+            
+            w = 5 + 25 * np.exp(-0.5 * (h - peak_time)**2 / 3.0) + np.random.normal(0, 2, len(h))
+            df = pd.DataFrame({'Time': h, 'Rain': np.clip(r, 0, None), 'Wind': np.clip(w, 0, None)})
         
         if df is not None:
             with st.expander(t["view_weather"]):
@@ -505,9 +443,8 @@ with tab_field:
             cum_s_raw, cum_f = 0, 0
             total_motor_cost = 0
             
-            ARRAY_SIZE = 10        # 10片 PVDF 陣列
-            MOTOR_COST = 75.0      # 單次伺服馬達作動耗能 (mJ)
-            SMART_THRESHOLD = 15.0 # 關鍵：降雨大於 15 mm/hr 才是致災水膜，才啟動馬達
+            ARRAY_SIZE = 10        
+            MOTOR_COST = 75.0      
             
             for idx, row in df.iterrows():
                 R, W = row['Rain'], row['Wind']
@@ -517,18 +454,14 @@ with tab_field:
                 f_f, z_f, eff_f, tau_f, _, _, pos_f, _ = engine.get_params(R, W, "Fixed")
                 trunc_f = 1 / (1 + PhysConfig.TRUNCATION_SHAPE_FACTOR * f_f * tau_f)
                 
-                # 計算單片原始產能
                 energy_s_raw = f_s * (eff_s**2) * trunc_s * (R**0.5) * pos_s * PhysConfig.BASE_POWER_FACTOR
                 energy_f = f_f * (eff_f**2) * trunc_f * (R**0.5) * pos_f * PhysConfig.BASE_POWER_FACTOR
                 
                 cum_s_raw += energy_s_raw
                 cum_f += energy_f
                 
-                # 【完美工程邏輯】：加入智慧感測閾值
-                # 小於 15 mm/hr 的毛毛雨，水膜不會癱瘓系統，馬達不啟動 (0 耗能)
-                # 大於 15 mm/hr 時，馬達才啟動，雨越大抽越多次
-                if R > SMART_THRESHOLD:
-                    actions = max(1, (R - SMART_THRESHOLD) / 10.0)
+                if R > 0:
+                    actions = max(1, R / 20.0) 
                     total_motor_cost += (MOTOR_COST * actions)
                 
                 current_net_s = (cum_s_raw * ARRAY_SIZE) - total_motor_cost
@@ -542,17 +475,16 @@ with tab_field:
             cum_s_net = total_array_raw - total_motor_cost
             
             eroi = total_array_raw / total_motor_cost if total_motor_cost > 0 else 0
-            gain = ((cum_s_net - cum_f_total) / cum_f_total) * 100 if cum_f_total > 0 else 0
+            gain = ((cum_s_net - cum_f_total) / cum_f_total) * 100 if cum_f_total > 0 and cum_s_net > 0 else 0
             
             m1, m2, m3 = st.columns(3)
             m1.metric(t["metric_fixed"], f"{int(cum_f_total):,} {t['unit_energy']}", "Baseline")
-            m2.metric(t["metric_smart"], f"{int(cum_s_net):,} {t['unit_energy']}", f"+{gain:.1f}%")
+            m2.metric(t["metric_smart"], f"{int(cum_s_net):,} {t['unit_energy']}", f"{gain:.1f}%")
             m3.metric(t["metric_eroi"], f"{eroi:.2f}", "Array Design")
             
             fig2 = go.Figure()
-            fig2.add_trace(go.Scatter(x=df['Time'], y=acc_s_list, name='Smart (10-Array)', fill='tozeroy', line=dict(color='#2e7d32', width=3)))
-            fig2.add_trace(go.Scatter(x=df['Time'], y=acc_f_list, name='Fixed (10-Array)', fill='tozeroy', line=dict(color='#c62828', width=2, dash='dot')))
-            
+            fig2.add_trace(go.Scatter(x=df['Time'], y=acc_s_list, name='Smart (10-Array)', line=dict(color='#2e7d32', width=3)))
+            fig2.add_trace(go.Scatter(x=df['Time'], y=acc_f_list, name='Fixed (10-Array)', line=dict(color='#c62828', width=2, dash='dot')))
             fig2.add_hline(y=0, line_dash="solid", line_color="gray", opacity=0.5)
             
             fig2.update_layout(title=t["chart_cum_title"], height=350, margin=dict(l=0,r=0,t=30,b=0), yaxis_title="Energy (mJ)")
