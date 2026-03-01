@@ -111,12 +111,60 @@ TRANSLATIONS = {
         "unit_energy": "mJ",
         "sim_start_btn": "執行蒙地卡羅模擬",
         "sim_success": "成功生成 {n} 顆雨滴數據。"
+    },
+    "日本語": {
+        "title": "Eco-Rain: 雨滴発電デジタルツイン",
+        "sidebar_settings": "グローバル設定",
+        "target_material": "ターゲット材料",
+        "beam_len": "カンチレバー長さ L (cm)",
+        "area": "センサー有効面積 (cm2)",
+        "freq": "共振周波数 (Hz)",
+        "drainage_cost": "排水エネルギーコスト (%)",
+        "dev_credit": "Tsukuba Science Edge 2026 向け開発",
+        "tab_theory": "理論とロジック",
+        "tab_lab": "物理実験室",
+        "tab_field": "フィールド・シミュレーション",
+        "theory_header": "物理ロジックとモデル",
+        "theory_sec1": "1. 環境入力モデル (自然物理)",
+        "theory_sec2": "2. システムダイナミクス (ハードウェア vs 自然)",
+        "eq1_title": "Eq. 1: 確率降雨モデル",
+        "eq1_desc": "Marshall-Palmer 雨滴粒径分布。",
+        "eq2_title": "Eq. 2: 終端速度補正",
+        "eq2_desc": "Gunn-Kinzer 空気抵抗補正。",
+        "eq3_title": "Eq. 3: 有効衝突角度",
+        "eq3_desc": "風速と雨速のベクトル合成。",
+        "eq4_title": "Eq. 4: 圧電ダイナミクス",
+        "eq4_desc": "二次減衰系とモーメントアーム効果。",
+        "eq5_title": "Eq. 5: ゴースト減衰 (自然限界)",
+        "eq5_desc": "水膜の蓄積に伴い減衰比が急増。",
+        "eq6_title": "Eq. 6: ソレノイド限界 (実験室限界)",
+        "eq6_desc": "高周波時のインダクタンス遅延による力減衰。",
+        "lab_ctrl": "パラメータ制御",
+        "lab_env": "実験 A：水膜減衰効果",
+        "lab_freq_sect": "実験 B：ソレノイド物理限界",
+        "lab_sweet_spot": "ソレノイド限界設定",
+        "lab_monitor": "物理パラメータ",
+        "lab_monitor_zeta": "減衰比 (Zeta)",
+        "rain_rate": "降雨強度 (mm/hr)",
+        "wind_speed": "風速 (m/s)",
+        "impact_freq": "衝突周波数 (Hz)",
+        "solenoid_eff": "ソレノイド効率",
+        "field_header": "実環境シミュレーション",
+        "sim_params": "シミュレーションパラメータ",
+        "sim_duration": "時間 (Hours)",
+        "view_weather": "気象データ表示",
+        "upload_csv": "CSVアップロード",
+        "use_sim": "シミュレーションデータを使用",
+        "use_csv": "アップロードデータを使用",
+        "metric_fixed": "固定式システム出力",
+        "metric_smart": "スマートシステム出力",
+        "metric_eroi": "EROI (エネルギー収支)",
+        "chart_cum_title": "累積発電量シミュレーション",
+        "unit_energy": "mJ",
+        "sim_start_btn": "モンテカルロ法を実行",
+        "sim_success": "{n} 個の雨滴データを生成しました。"
     }
 }
-
-# 若想擴充日文，可以直接複製前一版的字典放進來
-if "日本語" not in TRANSLATIONS:
-    TRANSLATIONS["日本語"] = TRANSLATIONS["繁體中文"]
 
 # ==========================================
 # 2. 物理常數定義區 (Physical Config)
@@ -125,13 +173,12 @@ class PhysConfig:
     PIEZO_SENSITIVITY_V_PM = 50000.0  
     IMPACT_DURATION_SEC = 0.002       
     
-    # 校正後參數 (33.3Hz Sweet Spot)
     DAMPING_RATIO_DRY = 0.04         
     DAMPING_COEFF_WET = 0.35          
     
     SATURATION_RAIN_RATE = 120.0      
     SMART_SYSTEM_WETNESS_RATIO = 0.2  
-    BASE_POWER_FACTOR = 1.0           # 調整係數，確保產能不會不合理地低
+    BASE_POWER_FACTOR = 1.0           
     TRUNCATION_SHAPE_FACTOR = 0.6     
 
 # ==========================================
@@ -148,7 +195,6 @@ class PhysicsEngine:
         D0 = 0.9 * (rain ** 0.21) 
         V_term = 3.778 * (D0 ** 0.67) 
         
-        # 頻率估算
         if freq_override is not None:
             freq_est = freq_override
         else:
@@ -169,7 +215,6 @@ class PhysicsEngine:
         tau = 1 / (zeta * wn)
         wd = wn * np.sqrt(1 - zeta**2)
         
-        # 移除這裡的隨機干擾，讓圖表顯示更穩定，改用固定有效力臂
         pos_factor = 0.5 
         rand_loc = self.length * 0.7 
         
@@ -247,7 +292,6 @@ st.sidebar.info("TE Connectivity LDT0-028K (PVDF)")
 param_beam_len = st.sidebar.number_input(t["beam_len"], 3.0, 10.0, 5.0, step=0.5)
 param_area = st.sidebar.number_input(t["area"], 0.5, 10.0, 2.5, format="%.1f")
 param_fn = st.sidebar.number_input(t["freq"], 50, 200, 100, format="%d")
-drainage_cost_pct = st.sidebar.slider(t["drainage_cost"], 1.0, 10.0, 5.0)
 
 engine = PhysicsEngine(area=param_area, fn=param_fn, length=param_beam_len)
 
@@ -262,7 +306,6 @@ with tab_theory:
     st.header(t["theory_header"])
     st.caption("Governing Equations of the Digital Twin: Bridging Lab & Nature")
     st.markdown("---")
-    # ... 理論公式區保持不變，為節省版面不更動 ...
     st.subheader(t["theory_sec1"])
     col_t1, col_t2 = st.columns(2)
     with col_t1:
@@ -286,7 +329,6 @@ with tab_lab:
     st.caption("Experiments isolating Ghost Damping (Physics) and Solenoid Limits (Hardware).")
     st.markdown("---")
 
-    # === 實驗 A: 水膜阻尼 (Ghost Damping) ===
     st.markdown(f"##### {t['lab_env']}")
     col_a1, col_a2 = st.columns([1, 2])
     with col_a1:
@@ -314,10 +356,8 @@ with tab_lab:
 
     st.markdown("---")
 
-    # === 實驗 B: 電磁閥物理限制 (Solenoid Limit) ===
     st.markdown(f"##### {t['lab_freq_sect']}")
     
-    # 修正滑桿與按鈕的 UI 衝突問題
     if 'freq_b' not in st.session_state:
         st.session_state.freq_b = 30
 
@@ -387,11 +427,9 @@ with tab_field:
                 df = None
         else:
             st.info(t["use_sim"])
-            sim_duration = st.slider(t["sim_duration"], 1, 24, 16) # 預設拉到 16 小時
+            sim_duration = st.slider(t["sim_duration"], 1, 24, 16) 
             
-            # 鎖定亂數種子，讓圖表不會因為點其他按鈕而一直抖動變形！
-            np.random.seed(42) 
-            
+            # 【移除亂數種子，恢復天氣隨機性】
             h = np.arange(0, sim_duration + 1, 1) 
             peak_time = sim_duration / 2
             r = 10 + 100 * np.exp(-0.5 * (h - peak_time)**2/2.5) 
@@ -426,14 +464,13 @@ with tab_field:
                 cum_s_raw += energy_s_raw
                 cum_f += energy_f
                 
-                # 【修正核心：加入「智慧啟動閾值 (Smart Threshold)」】
-                # 真正的智慧系統不會在毛毛雨就啟動馬達浪費電，必須等到降雨大於 15 mm/hr 才開始作動
-                if R > 15:
-                    actions = (R - 15) / 10.0 + 1 
+                # 【恢復最真實的殘酷物理邏輯：只要有雨，馬達就會動，不管虧不虧錢】
+                if R > 0:
+                    actions = max(1, R / 20.0) 
                     total_motor_cost += (MOTOR_COST * actions)
                 
-                # 若發生負產能，最低跌至 0，避免圖表不合理下墜
-                current_net_s = max(0, (cum_s_raw * ARRAY_SIZE) - total_motor_cost)
+                # 【移除 max(0)，容許出現物理負債 (負值)】
+                current_net_s = (cum_s_raw * ARRAY_SIZE) - total_motor_cost
                 current_net_f = cum_f * ARRAY_SIZE
                 
                 acc_s_list.append(current_net_s)
@@ -441,20 +478,24 @@ with tab_field:
             
             total_array_raw = cum_s_raw * ARRAY_SIZE
             cum_f_total = cum_f * ARRAY_SIZE
-            cum_s_net = max(0, total_array_raw - total_motor_cost)
+            cum_s_net = total_array_raw - total_motor_cost
             
             eroi = total_array_raw / total_motor_cost if total_motor_cost > 0 else 0
             gain = ((cum_s_net - cum_f_total) / cum_f_total) * 100 if cum_f_total > 0 else 0
             
             m1, m2, m3 = st.columns(3)
             m1.metric(t["metric_fixed"], f"{int(cum_f_total):,} {t['unit_energy']}", "Baseline")
-            m2.metric(t["metric_smart"], f"{int(cum_s_net):,} {t['unit_energy']}", f"+{gain:.1f}%")
+            m2.metric(t["metric_smart"], f"{int(cum_s_net):,} {t['unit_energy']}", f"{gain:.1f}%")
             m3.metric(t["metric_eroi"], f"{eroi:.2f}", "Array Design")
             
             fig2 = go.Figure()
-            # 將 fill 改為更穩定的畫法，防止因為微小負值造成多邊形破圖
+            # 讓負值可以顯示出來，並保留美麗的折線設計
             fig2.add_trace(go.Scatter(x=df['Time'], y=acc_s_list, name='Smart (10-Array)', line=dict(color='#2e7d32', width=3)))
             fig2.add_trace(go.Scatter(x=df['Time'], y=acc_f_list, name='Fixed (10-Array)', line=dict(color='#c62828', width=2, dash='dot')))
+            
+            # 加上一條「零基準線」，讓評審可以清楚看到什麼時候開始「回本」
+            fig2.add_hline(y=0, line_dash="solid", line_color="gray", opacity=0.5)
+            
             fig2.update_layout(title=t["chart_cum_title"], height=350, margin=dict(l=0,r=0,t=30,b=0), yaxis_title="Energy (mJ)")
             st.plotly_chart(fig2, use_container_width=True)
 
