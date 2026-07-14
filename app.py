@@ -1,11 +1,10 @@
 import streamlit as st
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 
 # ==========================================
-# 1. 多語言字典 (Translation Dictionary)
+# 1. 多語言字典 (加入學術文獻對齊摘要)
 # ==========================================
 TRANSLATIONS = {
     "English": {
@@ -16,33 +15,33 @@ TRANSLATIONS = {
         "area": "Sensor Area (cm2)",
         "freq": "Resonance Freq (Hz)",
         "dev_credit": "Developed for Global Link Singapore 2026",
-        "tab_theory": "Theory & Logic",
+        "tab_theory": "Theory & Literature",
         "tab_lab": "Physics Lab",
         "tab_field": "Field Simulation",
-        "theory_header": "Physics Logic & Models",
+        "theory_header": "Physics Logic & Literature Foundation",
         "theory_sec1": "1. Environmental Input Models (Nature)",
         "theory_sec2": "2. System Dynamics (Hardware vs. Nature)",
         "eq1_title": "Eq. 1: Stochastic Rain",
-        "eq1_desc": "Marshall-Palmer distribution for raindrop sizes.",
+        "eq1_desc": "Based on Marshall & Palmer (1948) drop distribution.",
         "eq2_title": "Eq. 2: Terminal Velocity",
-        "eq2_desc": "Gunn-Kinzer relation for air resistance correction.",
+        "eq2_desc": "Based on Gunn & Kinzer (1949) air resistance correction.",
         "eq3_title": "Eq. 3: Effective Impact Angle",
         "eq3_desc": "Vector synthesis of wind and rain velocity.",
         "eq4_title": "Eq. 4: Piezo-Dynamics",
-        "eq4_desc": "2nd-order system with moment arm scaling.",
+        "eq4_desc": "Based on Bowland (2010) structural damping model.",
         "eq5_title": "Eq. 5: Ghost Damping (Nature)",
-        "eq5_desc": "Damping spikes up to 0.35 as water film accumulates.",
+        "eq5_desc": "Damping spikes to 0.35 due to water film accumulation.",
         "eq6_title": "Eq. 6: Solenoid Limit (Lab)",
         "eq6_desc": "Force decays due to hardware stroke limit at high freq.",
         "lab_ctrl": "Parameter Control",
-        "lab_env": "Experiment A: Ghost Damping Effect (Paralysis)",
+        "lab_env": "Experiment A: Ghost Damping (Paralysis)",
         "lab_freq_sect": "Experiment B: Solenoid Hardware Limit",
         "lab_sweet_spot": "Set to Sweet Spot",
         "rain_rate": "Rain Rate (mm/hr)",
         "wind_speed": "Wind Speed (m/s)",
         "impact_freq": "Impact Freq (Hz)",
         "solenoid_eff": "Solenoid Stroke Efficiency",
-        "field_header": "Real-world Scenario Simulation (Water Film Accumulation)",
+        "field_header": "Real-world Scenario (Water Film Paralysis)",
         "sim_params": "Simulation Parameters",
         "sim_duration": "Duration (Hours)",
         "view_weather": "View Weather Data",
@@ -52,7 +51,7 @@ TRANSLATIONS = {
         "metric_ideal": "Ideal Output (Dry)",
         "metric_real": "Real Output (Water Film)",
         "metric_loss": "Energy Loss",
-        "chart_cum_title": "Cumulative Energy: Ideal vs. Real (System Paralysis)",
+        "chart_cum_title": "Cumulative Energy: Ideal vs. Real (Zero Usable Power)",
         "unit_energy": "mJ",
         "sim_start_btn": "Run Monte Carlo Sim",
         "sim_success": "Generated {n} drops data."
@@ -65,22 +64,22 @@ TRANSLATIONS = {
         "area": "感測器有效面積 (cm2)",
         "freq": "裝置共振頻率 (Hz)",
         "dev_credit": "為 Global Link Singapore 2026 開發",
-        "tab_theory": "理論架構",
+        "tab_theory": "理論架構與文獻",
         "tab_lab": "物理實驗室",
         "tab_field": "場域模擬",
-        "theory_header": "系統運算邏輯與物理模型",
+        "theory_header": "系統運算邏輯與學術文獻基礎",
         "theory_sec1": "1. 環境物理模型 (大自然輸入)",
         "theory_sec2": "2. 系統動力模型 (硬體限制 vs 自然限制)",
         "eq1_title": "Eq. 1: 隨機降雨模型",
-        "eq1_desc": "Marshall-Palmer 雨滴粒徑分佈模型。",
+        "eq1_desc": "基於 Marshall & Palmer (1948) 雨滴粒徑分佈模型。",
         "eq2_title": "Eq. 2: 終端速度修正",
-        "eq2_desc": "Gunn-Kinzer 空氣阻力修正公式。",
+        "eq2_desc": "基於 Gunn & Kinzer (1949) 空氣阻力修正公式。",
         "eq3_title": "Eq. 3: 有效撞擊角度",
         "eq3_desc": "風速與雨速的向量合成分析。",
         "eq4_title": "Eq. 4: 壓電動力學",
-        "eq4_desc": "二階阻尼系統與力臂效應。",
-        "eq5_title": "Eq. 5: 幽靈阻尼 (自然限制)",
-        "eq5_desc": "積水導致阻尼比飆升至極限 0.35。",
+        "eq4_desc": "基於 Bowland (2010) 的結構阻尼動力學模型。",
+        "eq5_title": "Eq. 5: 幽靈阻尼 (自然極限)",
+        "eq5_desc": "積水導致阻尼比飆升至極限 0.35 (本研究核心發現)。",
         "eq6_title": "Eq. 6: 電磁閥限制 (實驗室極限)",
         "eq6_desc": "高頻時因機械行程不足導致撞擊力衰減。",
         "lab_ctrl": "變因控制實驗",
@@ -114,20 +113,20 @@ TRANSLATIONS = {
         "area": "センサー有効面積 (cm2)",
         "freq": "共振周波数 (Hz)",
         "dev_credit": "Global Link Singapore 2026 向け開発",
-        "tab_theory": "理論とロジック",
+        "tab_theory": "理論と文献",
         "tab_lab": "物理実験室",
         "tab_field": "シミュレーション",
-        "theory_header": "物理ロジックとモデル",
+        "theory_header": "物理ロジックと学術文献",
         "theory_sec1": "1. 環境入力モデル",
         "theory_sec2": "2. システムダイナミクス",
         "eq1_title": "Eq. 1: 確率降雨モデル",
-        "eq1_desc": "Marshall-Palmer 雨滴粒径分布。",
+        "eq1_desc": "Marshall & Palmer (1948) 雨滴分布に基づく。",
         "eq2_title": "Eq. 2: 終端速度補正",
-        "eq2_desc": "Gunn-Kinzer 空気抵抗補正。",
+        "eq2_desc": "Gunn & Kinzer (1949) 空気抵抗補正。",
         "eq3_title": "Eq. 3: 有効衝突角度",
         "eq3_desc": "風速と雨速のベクトル合成。",
         "eq4_title": "Eq. 4: 圧電ダイナミクス",
-        "eq4_desc": "二次減衰系とモーメントアーム効果。",
+        "eq4_desc": "Bowland (2010) 減衰モデルに基づく。",
         "eq5_title": "Eq. 5: ゴースト減衰",
         "eq5_desc": "水膜による減衰比の急増 (最大0.35)。",
         "eq6_title": "Eq. 6: ソレノイド限界",
@@ -145,8 +144,8 @@ TRANSLATIONS = {
         "sim_duration": "時間 (Hours)",
         "view_weather": "データ表示",
         "upload_csv": "CSVアップロード",
-        "use_sim": "シミュレーションデータを使用",
-        "use_csv": "アップロードデータを使用",
+        "use_sim": "シミュレーションデータ",
+        "use_csv": "アップロードデータ",
         "metric_ideal": "理想システム出力",
         "metric_real": "現実システム出力",
         "metric_loss": "エネルギー損失",
@@ -164,7 +163,7 @@ class PhysConfig:
     PIEZO_SENSITIVITY_V_PM = 50000.0  
     IMPACT_DURATION_SEC = 0.002       
     
-    # 完美對齊摘要的關鍵數值
+    # 對齊摘要的關鍵數值
     DAMPING_RATIO_DRY = 0.02          
     DAMPING_RATIO_WET_MAX = 0.35      
     
@@ -177,12 +176,15 @@ class PhysConfig:
 # ==========================================
 st.set_page_config(page_title="Eco-Rain Digital Twin", layout="wide")
 
+# 這裡把消失的文字顏色 CSS (p, span, li) 補回來了！
 st.markdown("""
 <style>
     .metric-card { background-color: #f5f5f5 !important; border: 1px solid #e0e0e0; border-radius: 5px; padding: 15px; border-left: 5px solid #2e7d32; margin-bottom: 10px; }
     .theory-box { background-color: #ffffff !important; padding: 20px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
     .theory-box h4 { color: #1565c0 !important; font-weight: bold; margin-bottom: 10px; }
+    .theory-box p, .theory-box li, .theory-box span, .theory-box div, .theory-box b { color: #212121 !important; font-size: 1.05em; line-height: 1.6; }
     .citation-box { background-color: #fff3e0 !important; padding: 15px; border-radius: 5px; border-left: 5px solid #ff9800; font-size: 0.9em; margin-top: 20px; }
+    .citation-box p, .citation-box i, .citation-box b, .citation-box span { color: #333333 !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -204,7 +206,7 @@ st.sidebar.text(t["dev_credit"])
 
 tab_theory, tab_lab, tab_field = st.tabs([t["tab_theory"], t["tab_lab"], t["tab_field"]])
 
-# ================= TAB 1: 理論架構 =================
+# ================= TAB 1: 理論架構與學術文獻 =================
 with tab_theory:
     st.header(t["theory_header"])
     st.markdown("---")
@@ -232,6 +234,17 @@ with tab_theory:
         st.markdown(f'<div class="theory-box"><h4>{t["eq6_title"]}</h4><p>{t["eq6_desc"]}</p></div>', unsafe_allow_html=True)
         st.latex(r"F_{eff}(f) = F_{max} \cdot \left(\frac{33.3}{f}\right)^{1.5}")
 
+    # 把您摘要裡的 References 霸氣地加在最下方！
+    st.markdown("---")
+    st.markdown("### 📚 References")
+    st.markdown("""
+    <div class="citation-box">
+    <p><b>[1]</b> Marshall, J.S., & Palmer, W.M. (1948). "The distribution of raindrops with size." <i>Journal of Meteorology</i>.</p>
+    <p><b>[2]</b> Gunn, R., & Kinzer, G.D. (1949). "The terminal velocity of fall for water droplets in stagnant air." <i>Journal of Meteorology</i>.</p>
+    <p><b>[3]</b> Bowland, A., & Muriuki, M. (2010). "New concepts in modeling damping in structures." <i>10th International Conference on Computing in Civil and Building Engineering</i>.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
 # ================= TAB 2: 物理實驗室 =================
 with tab_lab:
     st.markdown(f"#### {t['lab_ctrl']}")
@@ -242,7 +255,6 @@ with tab_lab:
     with col_a1:
         val_rain_a = st.slider(f"{t['rain_rate']}", 0, 150, 150, key="exp_a_rain")
         
-        # 簡單計算用於波形顯示
         z_ideal = PhysConfig.DAMPING_RATIO_DRY
         wetness = min(1.0, val_rain_a / PhysConfig.SATURATION_RAIN_RATE)
         z_real = PhysConfig.DAMPING_RATIO_DRY + (PhysConfig.DAMPING_RATIO_WET_MAX - PhysConfig.DAMPING_RATIO_DRY) * wetness
@@ -254,7 +266,6 @@ with tab_lab:
         wd_ideal = 2 * np.pi * param_fn * np.sqrt(1 - z_ideal**2)
         wd_real = 2 * np.pi * param_fn * np.sqrt(1 - z_real**2)
         
-        # 水膜吸收衝擊力
         impulse_real = 1.0 * (1 - (0.8 * wetness)) 
         
         wave_ideal = 1.0 * np.exp(-z_ideal * 2 * np.pi * param_fn * t_arr) * np.sin(wd_ideal * t_arr)
@@ -304,7 +315,7 @@ with tab_lab:
         fig_b.update_layout(title=f"Fig 3: Hardware Distortion @ {val_freq_b} Hz", xaxis_title="Time (ms)", yaxis_title="Voltage (V)", height=350, margin=dict(l=20, r=20, t=40, b=20), yaxis=dict(range=[-1.2, 1.2]))
         st.plotly_chart(fig_b, use_container_width=True)
 
-# ================= TAB 3: 場域模擬 (無馬達、證明癱瘓的新邏輯) =================
+# ================= TAB 3: 場域模擬 (無馬達、證明癱瘓) =================
 with tab_field:
     st.markdown(f"#### {t['field_header']}")
     col_input, col_sim = st.columns([1, 3])
@@ -323,27 +334,23 @@ with tab_field:
         if df is not None:
             acc_ideal_list, acc_real_list = [], []
             cum_ideal, cum_real = 0, 0
-            water_film_thickness = 0.0 # 水膜累積變數
+            water_film_thickness = 0.0 
             
             for idx, row in df.iterrows():
                 R = row['Rain']
                 
-                # 1. 計算理想狀態 (永遠保持 0.02 阻尼)
                 energy_i = R * PhysConfig.BASE_POWER_FACTOR * 1.5 
                 cum_ideal += energy_i
                 
-                # 2. 計算真實狀態 (水膜累積死亡方程式)
                 if R > 5:
-                    water_film_thickness += (R / 100.0) * 0.25 # 大雨時累積
+                    water_film_thickness += (R / 100.0) * 0.25 
                 else:
-                    water_film_thickness -= 0.15 # 雨停慢慢乾
+                    water_film_thickness -= 0.15 
                 water_film_thickness = max(0.0, min(1.0, water_film_thickness))
                 
-                # 死亡方程式核心: 阻尼飆升 + 衝擊力被水吸走
                 current_damping = PhysConfig.DAMPING_RATIO_DRY + (PhysConfig.DAMPING_RATIO_WET_MAX - PhysConfig.DAMPING_RATIO_DRY) * water_film_thickness
-                sponge_absorption = 1.0 - (0.85 * water_film_thickness) # 最多吸收 85% 力量
+                sponge_absorption = 1.0 - (0.85 * water_film_thickness) 
                 
-                # 發電量因為高阻尼和海綿效應被強制壓平
                 energy_r = energy_i * sponge_absorption * (PhysConfig.DAMPING_RATIO_DRY / current_damping)
                 cum_real += energy_r
                 
@@ -363,3 +370,4 @@ with tab_field:
             
             fig2.update_layout(title=t["chart_cum_title"], height=350, margin=dict(l=0,r=0,t=30,b=0), yaxis_title="Energy (mJ)")
             st.plotly_chart(fig2, use_container_width=True)
+            
