@@ -1,6 +1,5 @@
-streamlit
-numpy
-pandas
-matplotlib
-plotly
-scipy
+streamlit==1.63.0
+numpy>=1.26,<3
+pandas>=2.2,<4
+plotly==6.9.0
+scipy>=1.11,<2
